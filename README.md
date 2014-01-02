@@ -8,7 +8,6 @@ It is organized as a stack of ROS Hydro packages.
 Copyright Notice
 ----------------
 Copyright (C) 2013. All rights reserved.
-  * Andrew Harris \<andrew.unit@gmail.com>
   * Prasanna Velagapudi \<psigen@gmail.com>
   * Pyry Matikainen \<pkmatikainen@gmail.com>
   * Michael Furlong \<furlong@gmail.com>
