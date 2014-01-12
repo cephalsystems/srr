@@ -6,7 +6,8 @@ class cephal::packages {
                     'ssh',
                     'lm-sensors',
                     'cmake',
-                    'build-essential', ]
+                    'build-essential', 
+                    'ros-hydro-desktop-full', ]
 
   # Require the aptitude puppet module
   class { 'apt': 
@@ -30,7 +31,6 @@ class cephal::packages {
   package { $apt_packages:
     ensure => latest,
     provider => 'apt',
-    require => [ Exec["apt-get update"],
-                 Apt::Source[ 'ros' ], ],
+    require => Apt::Source[ 'ros' ],
   }
 }
