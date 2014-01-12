@@ -1,0 +1,3 @@
+# Set up emacs default alias
+alias emacs='emacs -nw '
+
