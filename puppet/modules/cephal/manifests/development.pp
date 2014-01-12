@@ -6,7 +6,8 @@ class cephal::development {
                     'puppet-lint',
                     'meld',
                     'terminator',
-                    'htop' ]
+                    'htop',
+                    'chromium-browser', ]
   
   package { $apt_packages:
     ensure => 'present',

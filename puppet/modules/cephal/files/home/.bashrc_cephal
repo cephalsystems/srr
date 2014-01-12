@@ -1,3 +1,9 @@
 # Set up emacs default alias
 alias emacs='emacs -nw '
 
+# Set up ROS
+if [ -f /opt/ros/hydro/setup.bash ]
+then
+    source /opt/ros/hydro/setup.bash
+fi
+

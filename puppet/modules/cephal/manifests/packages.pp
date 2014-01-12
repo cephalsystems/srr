@@ -26,7 +26,12 @@ class cephal::packages {
     repos             => 'main',
     required_packages => 'debian-keyring debian-archive-keyring',
   }
-
+  ~>
+  exec { 'sudo rosdep init && rosdep update' :
+    path        => ["/usr/bin"],
+    refreshonly => true
+  }
+  
   # Trigger installation of necessary packages
   package { $apt_packages:
     ensure => latest,
