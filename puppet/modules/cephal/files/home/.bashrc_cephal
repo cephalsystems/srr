@@ -7,3 +7,8 @@ then
     source /opt/ros/hydro/setup.bash
 fi
 
+# Set up local catkin workspace
+if [ -f /opt/cephal/devel/setup.bash ]
+then
+    source /opt/cephal/devel/setup.bash
+fi
