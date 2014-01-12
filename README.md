@@ -4,6 +4,10 @@ Sample Return Challenge
 This repository contains source code and documentation for the NASA Sample Return Challenge.  
 It is organized as a stack of ROS Hydro packages.
 
+Contents
+--------
+  * src - Source code for ROS packages.
+  * puppet - System configuration files for puppet.
 
 Copyright Notice
 ----------------
