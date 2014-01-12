@@ -11,17 +11,24 @@ class cephal::development {
   package { $apt_packages:
     ensure => 'present',
     provider => 'apt',
-    require => Exec["apt-get update"],
   }
 
+  # Add custom emacs settings
+  file { '/home/cephal/.emacs.d':
+    ensure => 'directory',
+    owner => 'cephal',
+    group => 'cephal',
+    require => Package['emacs'],
+  }
+  ->
   file { '/home/cephal/.emacs.d/cephal.el':
     source => 'puppet:///modules/cephal/home/.emacs.d/cephal.el',
     ensure => 'present',
     owner => 'cephal',
     group => 'cephal',
-    require => Package['emacs'],
   }
 
+  # Add custom bash settings
   file { '/home/cephal/.bashrc_cephal':
     source => 'puppet:///modules/cephal/home/.bashrc_cephal',
     ensure => 'present',
