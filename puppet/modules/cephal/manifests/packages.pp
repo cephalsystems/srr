@@ -7,6 +7,7 @@ class cephal::packages {
                     'lm-sensors',
                     'cmake',
                     'build-essential', 
+                    'ipython',
                     'ros-hydro-desktop-full', ]
 
   # Require the aptitude puppet module
