@@ -5,7 +5,7 @@ class cephal::users {
     uid => '1000',
     gid => '1000',
     comment => 'Cephal Systems,,,',
-    groups => [ 'cephal', 'adm', 'cdrom', 'sudo',
+    groups => [ 'cephal', 'adm', 'cdrom', 'sudo', 'dialout',
                 'dip', 'plugdev', 'lpadmin', 'sambashare' ],
     ensure => 'present',
     managehome => true,
