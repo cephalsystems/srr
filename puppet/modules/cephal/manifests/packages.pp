@@ -1,13 +1,22 @@
 class cephal::packages {
 
   # Required aptitude packages
-  $apt_packages = [ 'git',
+  $apt_packages = [ # Development packages
+                    'git',
                     'puppet',
                     'ssh',
                     'lm-sensors',
                     'cmake',
                     'build-essential', 
                     'ipython',
+                    # Point Grey dependencies
+                    'libraw1394-11',
+                    'libgtk2.0-0',
+                    'libgtkmm-2.4-dev',
+                    'libglademm-2.4-dev',
+                    'libgtkglextmm-x11-1.2-dev',
+                    'libusb-1.0-0',
+                    # ROS packages
                     'ros-hydro-desktop-full', ]
 
   # Require the aptitude puppet module
