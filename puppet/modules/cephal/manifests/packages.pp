@@ -54,8 +54,22 @@ class cephal::packages {
   ->
   # Trigger installation of necessary packages.
   package { $apt_packages:
-    ensure => latest,
+    ensure   => latest,
     provider => 'aptitude',
-    require => Apt::Source[ 'ros' ],
+    require  => Apt::Source[ 'ros' ],
+  }
+
+  # Start network-manager service with modified permissions.
+  file { '/etc/dbus-1/system.d/org.freedesktop.NetworkManager.conf':
+    ensure  => present,
+    owner   => 'root',
+    group   => 'root',
+    source  => 'puppet:///modules/cephal/etc/dbus-1/system.d/org.freedesktop.NetworkManager.conf',
+    require => Package['network-manager'],
+  }
+  -> 
+  service { 'network-manager':
+    enable  => true,
+    ensure  => 'running',
   }
 }
