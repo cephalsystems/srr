@@ -4,6 +4,7 @@ class cephal::packages {
   $apt_packages = [ # Hardware support packages
                     'lm-sensors',
                     'bcmwl-kernel-source',
+                    'network-manager',
                     # Development packages
                     'git',
                     'puppet',
@@ -22,12 +23,12 @@ class cephal::packages {
                     #'ros-hydro-desktop-full',
                     ]
 
-  # Require the aptitude puppet module
+  # Require the aptitude puppet module.
   class { 'apt': 
     always_apt_update => true,
   }
 
-  # Add ROS repository before anything else
+  # Add ROS repository before anything else.
   apt::key { 'ros':
     key        => 'B01FA116',
     key_source => 'http://packages.ros.org/ros.key',
@@ -41,14 +42,20 @@ class cephal::packages {
   }
   ~>
   exec { 'sudo rosdep init && rosdep update' :
-    path        => ["/usr/bin"],
-    refreshonly => true
+    path        => [ '/usr/bin' ],
+    refreshonly => true,
   }
-  
-  # Trigger installation of necessary packages
+
+  # Do not install recommended packages by default.
+  file { "/root/.aptitude/config":
+    ensure  => present,
+    content => 'APT::Install-Recommends "0";',
+  }
+  ->
+  # Trigger installation of necessary packages.
   package { $apt_packages:
     ensure => latest,
-    provider => 'apt',
+    provider => 'aptitude',
     require => Apt::Source[ 'ros' ],
   }
 }
