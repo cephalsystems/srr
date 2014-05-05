@@ -17,7 +17,8 @@ class cephal::packages {
                     'libgtkglextmm-x11-1.2-dev',
                     'libusb-1.0-0',
                     # ROS packages
-                    'ros-hydro-desktop-full', ]
+                    #'ros-hydro-desktop-full',
+                    ]
 
   # Require the aptitude puppet module
   class { 'apt': 
