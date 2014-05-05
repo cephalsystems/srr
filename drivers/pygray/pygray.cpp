@@ -16,6 +16,24 @@ void doCameraError(Error& err) {
 	PyErr_SetString(CameraError, err.GetDescription());
 }
 
+std::string guidToString(PGRGuid& guid) {
+    std::stringstream ss;
+    ss << std::hex << guid.val[0];
+    ss << std::hex << guid.val[1];
+    ss << std::hex << guid.val[2];
+    ss << std::hex << guid.val[3];
+    return ss.str();
+}
+
+void stringToGuid(const char* s, PGRGuid& guid) {
+    std::stringstream ss(s);
+    ss >> std::hex >> guid.val[0];
+    ss >> std::hex >> guid.val[1];
+    ss >> std::hex >> guid.val[2];
+    ss >> std::hex >> guid.val[3];
+    //sscanf(s, "%x%x%x%x", &(guid.val[0]), &(guid.val[1]), &(guid.val[2]), &(guid.val[3]));
+}
+
 // Have to declare anything that is directly passed into python with extern C
 extern "C" {
     static void PygrayCamera_dealloc(pygray_CameraObject* self);
@@ -60,15 +78,13 @@ PygrayCamera_init(pygray_CameraObject* self, PyObject* args, PyObject* kwds)
     Error error;
 
     PyObject* temp;
+    char* tempstr;
 
-    if (! PyArg_ParseTuple(args, "IIII", &(guid.val[0]), 
-    									 &(guid.val[1]),
-    									 &(guid.val[2]), 
-    									 &(guid.val[3]))) 
+    if (! PyArg_ParseTuple(args, "s", &tempstr) 
     {
         return -1; 
     }
-    //if (! PyArg_ParseTuple)
+    stringToGuid(tempstr, guid);
 
     self->cam = new Camera;
     self->camInfo = new CameraInfo;
@@ -275,8 +291,9 @@ pygray_listcams(PyObject *self, PyObject *args)
 	        doCameraError(error);
 	        return NULL;
         }
+        std::string guidStr = guidToString(guid);
         PyList_SetItem(ret, i, 
-        	Py_BuildValue("IIII", guid.val[0], guid.val[1], guid.val[2], guid.val[3]));
+        	Py_BuildValue("s", guidStr.c_str()));
     }
 
     return ret;
