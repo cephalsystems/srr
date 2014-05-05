@@ -1,11 +1,13 @@
 class cephal::packages {
 
   # Required aptitude packages
-  $apt_packages = [ # Development packages
+  $apt_packages = [ # Hardware support packages
+                    'lm-sensors',
+                    'bcmwl-kernel-source',
+                    # Development packages
                     'git',
                     'puppet',
                     'ssh',
-                    'lm-sensors',
                     'cmake',
                     'build-essential', 
                     'ipython',
