@@ -3,7 +3,7 @@ from distutils.core import setup, Extension
 # todo: put in the correct directories for flycap
 module1 = Extension('pygray',
 	                include_dirs = ['/usr/local/include', '/usr/include/flycapture'],
-                    libraries = ['lflycapture'],
+                    libraries = ['flycapture'],
                     library_dirs = ['/usr/local/lib', '/usr/lib'],
                     sources = ['pygray.cpp'])
 
