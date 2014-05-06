@@ -3,6 +3,8 @@
 #include <sstream>
 #include "FlyCapture2.h"
 
+using namespace FlyCapture2;
+
 typedef struct {
     PyObject_HEAD
     Camera* cam;
@@ -16,10 +18,28 @@ void doCameraError(Error& err) {
 	PyErr_SetString(CameraError, err.GetDescription());
 }
 
+std::string guidToString(PGRGuid& guid) {
+    std::stringstream ss;
+    ss << std::hex << guid.value[0];
+    ss << std::hex << guid.value[1];
+    ss << std::hex << guid.value[2];
+    ss << std::hex << guid.value[3];
+    return ss.str();
+}
+
+void stringToGuid(const char* s, PGRGuid& guid) {
+    std::stringstream ss(s);
+    ss >> std::hex >> guid.value[0];
+    ss >> std::hex >> guid.value[1];
+    ss >> std::hex >> guid.value[2];
+    ss >> std::hex >> guid.value[3];
+    //sscanf(s, "%x%x%x%x", &(guid.val[0]), &(guid.val[1]), &(guid.val[2]), &(guid.val[3]));
+}
+
 // Have to declare anything that is directly passed into python with extern C
 extern "C" {
     static void PygrayCamera_dealloc(pygray_CameraObject* self);
-    static PyObject * PygrayCamera_newPygrayCamera_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+    static PyObject * PygrayCamera_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
     static int PygrayCamera_init(pygray_CameraObject* self, PyObject* args, PyObject* kwds);
     PyMODINIT_FUNC initpygray(void);
     //DL_EXPORT(void) initflp();
@@ -29,8 +49,8 @@ static void
 PygrayCamera_dealloc(pygray_CameraObject* self)
 {
 	if(self->cam) {
-		self->cam.StopCapture();
-		self->cam.Disconnect();
+		self->cam->StopCapture();
+		self->cam->Disconnect();
 	}
 
 	delete self->cam;
@@ -59,22 +79,19 @@ PygrayCamera_init(pygray_CameraObject* self, PyObject* args, PyObject* kwds)
     PGRGuid guid;
     Error error;
 
-    PyObject* temp;
+    char* tempstr;
 
-    if (! PyArg_ParseTuple(args, "IIII", &(guid.val[0]), 
-    									 &(guid.val[1]),
-    									 &(guid.val[2]), 
-    									 &(guid.val[3]))) 
+    if (! PyArg_ParseTuple(args, "s", &tempstr) )
     {
         return -1; 
     }
-    //if (! PyArg_ParseTuple)
+    stringToGuid(tempstr, guid);
 
     self->cam = new Camera;
     self->camInfo = new CameraInfo;
 
     // Connect to a camera
-    error = self->cam.Connect(&guid);
+    error = self->cam->Connect(&guid);
     if (error != PGRERROR_OK)
     {
     	doCameraError(error);
@@ -86,7 +103,7 @@ PygrayCamera_init(pygray_CameraObject* self, PyObject* args, PyObject* kwds)
     }
 
     // Get the camera information
-    error = self->cam.GetCameraInfo(self->camInfo);
+    error = self->cam->GetCameraInfo(self->camInfo);
     if (error != PGRERROR_OK)
     {
     	doCameraError(error);
@@ -102,32 +119,32 @@ PygrayCamera_init(pygray_CameraObject* self, PyObject* args, PyObject* kwds)
 
 static PyObject* PygrayCamera_start(pygray_CameraObject* self) {
 	if(self->cam) {
-		Error error = self->cam.StartCapture();
+		Error error = self->cam->StartCapture();
 		if (error != PGRERROR_OK) {
 			doCameraError(error);
 			return NULL;
 		}
 	}
 
-	Py_RETURN_NONE
+	Py_RETURN_NONE;
 }
 
 static PyObject* PygrayCamera_stop(pygray_CameraObject* self) {
 	if(self->cam) {
-		Error error = self->cam.StopCapture();
+		Error error = self->cam->StopCapture();
 		if (error != PGRERROR_OK) {
 			doCameraError(error);
 			return NULL;
 		}
 	}
 
-	Py_RETURN_NONE
+	Py_RETURN_NONE;
 }
 
 static PyObject* PygrayCamera_getframestr(pygray_CameraObject* self) {
 	if(self->cam) {
 		Image rawImage;
-		Error error = self->cam.RetrieveBuffer( &rawImage );
+		Error error = self->cam->RetrieveBuffer( &rawImage );
 		if (error != PGRERROR_OK)
         {
             doCameraError(error);
@@ -152,7 +169,7 @@ static PyObject* PygrayCamera_getframestr(pygray_CameraObject* self) {
         int datasize = convertedImage.GetDataSize();
         return Py_BuildValue("iiis#", imrows, imcols, stride, (char*)(convertedImage.GetData()), datasize);
 	} else {
-		Py_RETURN_NONE
+	  Py_RETURN_NONE;
 	}
 }
 
@@ -160,7 +177,7 @@ static PyObject* PygrayCamera_getinfo(pygray_CameraObject* self) {
 	PyObject *d = PyDict_New();
 	if(self->camInfo) {
 		CameraInfo* info = self->camInfo;
-	    PyDict_SetItemString(d, "serialNumber", PyString_FromString(info->serialNumber));
+	    PyDict_SetItemString(d, "serialNumber", PyInt_FromLong(info->serialNumber));
 	    PyDict_SetItemString(d, "modelName", PyString_FromString(info->modelName));
 	    PyDict_SetItemString(d, "vendorName", PyString_FromString(info->vendorName));
 	    PyDict_SetItemString(d, "sensorInfo", PyString_FromString(info->sensorInfo));
@@ -184,9 +201,9 @@ static PyMethodDef PygrayCamera_methods[] = {
 };
 
 // no members
-static PyMemberDef PygrayCamera_members[] = {
-    {NULL}  /* Sentinel */
-};
+//static PyMemberDef PygrayCamera_members[] = {
+//    {NULL}  /* Sentinel */
+//};
 
 static PyTypeObject pygray_CameraType = {
     PyObject_HEAD_INIT(NULL)
@@ -218,7 +235,7 @@ static PyTypeObject pygray_CameraType = {
     0,		               				/* tp_iter */
     0,		               				/* tp_iternext */
     PygrayCamera_methods,      			/* tp_methods */
-    PygrayCamera_members,      			/* tp_members */
+    0, /*PygrayCamera_members,*/      			/* tp_members */
     0,                         			/* tp_getset */
     0,                         			/* tp_base */
     0,                         			/* tp_dict */
@@ -275,8 +292,9 @@ pygray_listcams(PyObject *self, PyObject *args)
 	        doCameraError(error);
 	        return NULL;
         }
+        std::string guidStr = guidToString(guid);
         PyList_SetItem(ret, i, 
-        	Py_BuildValue("IIII", guid.val[0], guid.val[1], guid.val[2], guid.val[3]));
+        	Py_BuildValue("s", guidStr.c_str()));
     }
 
     return ret;
@@ -309,7 +327,10 @@ initpygray(void)
     Py_INCREF(&pygray_CameraType);
     PyModule_AddObject(m, "Camera", (PyObject *)&pygray_CameraType);
 
-	CameraError = PyErr_NewException("pygray.cameraError", NULL, NULL);
+    // PyErr_NewException requires a non-constant char* for the name, 
+    // probably due to an oversight, hence this strange little dance
+    char errName[] = "pygray.cameraError\0";
+    CameraError = PyErr_NewException(errName, NULL, NULL);
     Py_INCREF(CameraError);
     PyModule_AddObject(m, "cameraError", CameraError);
 }
