@@ -1,17 +1,19 @@
+#!/usr/bin/env python
+# 
+# Connects to Roboclaw and reads sensor values.
+# 
+
 import roboclaw
 from roboclaw import *
 import serial
 
 print "Roboclaw Example 1\r\n"
 
-#Rasberry Pi/Linux Serial instance example
-#port = serial.Serial("/dev/ttyACM0", baudrate=115200, timeout=0.1)
-
-#Windows Serial instance example
-port = serial.Serial("/dev/ttyACM1", baudrate=38400, timeout=1)
+# Open serial port.
+port = serial.Serial("/dev/serial/by-path/pci-0000:04:00.0-usb-0:1:1.0", baudrate=38400, timeout=1)
 roboclaw.port = port
 
-#Get version string
+# Get version string.
 sendcommand(128,21);
 rcv = port.read(32)
 print repr(rcv)
