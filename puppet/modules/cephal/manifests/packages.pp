@@ -12,6 +12,7 @@ class cephal::packages {
                     'cmake',
                     'build-essential', 
                     'ipython',
+                    'python-dev',
                     # Point Grey dependencies
                     'libraw1394-11',
                     'libgtk2.0-0',
