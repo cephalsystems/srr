@@ -10,7 +10,7 @@ DIR=$(dirname "${BASH_SOURCE[0]}")
 echo "Starting puppet update..."
 pushd ${DIR} > /dev/null
 
-sudo puppet apply --modulepath ./modules manifests/site.pp \
+sudo puppet apply --hiera_config ./hiera.yaml --modulepath ./modules manifests/site.pp \
     || { echo "ERROR: Failure during puppet configuration." && exit 1; }
 
 popd > /dev/null
