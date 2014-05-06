@@ -6,11 +6,11 @@ It is organized as a stack of ROS Hydro packages.
 
 Hardware configuration
 ----------------------
-| USB device   | Function | Position | Connection                   |
-| ------------ | -------- | -------- | ---------------------------- |
-| Roboclaw 30A | Drive    | TOP      | pci-0000:00:14.0-usb-0:4:1.0 |
-| Roboclaw 15A | Rake     | MIDDLE   | pci-0000:04:00.0-usb-0:1:1.0 |
-| Roboclaw 15A | Bin      | BOTTOM   | pci-0000:04:00.0-usb-0:2:1.0 |
+| USB device   | Symlink             | Position | Connection                   |
+| ------------ | ------------------- | -------- | ---------------------------- |
+| Roboclaw 30A | /dev/roboclaw_drive | TOP      | pci-0000:00:14.0-usb-0:4:1.0 |
+| Roboclaw 15A | /dev/roboclaw_rake  | MIDDLE   | pci-0000:04:00.0-usb-0:1:1.0 |
+| Roboclaw 15A | /dev/roboclaw_bag   | BOTTOM   | pci-0000:04:00.0-usb-0:2:1.0 |
 
 Contents
 --------

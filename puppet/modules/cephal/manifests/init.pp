@@ -2,7 +2,7 @@ class cephal {
   include cephal::users
   include cephal::packages
 
-  # Add a nice message to the login prompt
+  # Add a nice message to the login prompt.
   file { '/etc/motd.tail' :
     source => 'puppet:///modules/cephal/etc/motd.tail',
     owner => "root",
@@ -10,7 +10,7 @@ class cephal {
     mode => "644",
   }
 
-  # Clone the SRC software
+  # Clone the SRC software.
   $repo_path = '/opt/cephal'
   $repo_uri = 'git@github.com:psigen/src.git'
 
@@ -34,5 +34,22 @@ class cephal {
     revision => 'master',
     provider => git,
     source => $repo_uri,
+  }
+
+  # Create symlinks to Roboclaw USB devices.
+  # Roboclaw for drivetrain.
+  file { '/dev/roboclaw_drive':
+    ensure => 'link',
+    target => '/dev/serial/by-path/pci-0000:00:14.0-usb-0:4:1.0',
+  }
+  # Roboclaw for rake mechanism.
+  file { '/dev/roboclaw_rake':
+    ensure => 'link',
+    target => '/dev/serial/by-path/pci-0000:04:00.0-usb-0:1:1.0',
+  }
+  # Roboclaw for bagging mechanism.
+  file { '/dev/roboclaw_bag':
+    ensure => 'link',
+    target => '/dev/serial/by-path/pci-0000:04:00.0-usb-0:2:1.0',
   }
 }
