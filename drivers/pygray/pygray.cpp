@@ -9,6 +9,7 @@ using namespace FlyCapture2;
 typedef struct {
     PyObject_HEAD
     Camera* cam;
+    bool useColor;
     CameraInfo* camInfo;
 } pygray_CameraObject;
 
@@ -83,6 +84,7 @@ PygrayCamera_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (self != NULL) {
     	self->cam = NULL;
     	self->camInfo = NULL;
+	self->useColor = false;
     }
 
     return (PyObject *)self;
@@ -133,6 +135,20 @@ PygrayCamera_init(pygray_CameraObject* self, PyObject* args, PyObject* kwds)
     return 0;
 }
 
+static PyObject* PygrayCamera_setcolormode(pygray_CameraObject* self, 
+					   PyObject *args) {
+  if(self->cam) {
+    int colorMode = 0;
+    if (! PyArg_ParseTuple(args, "i", &colorMode) )
+    {
+      Py_RETURN_NONE;
+    }
+    self->useColor = (colorMode > 0);
+  }
+
+  Py_RETURN_NONE;
+}
+
 static PyObject* PygrayCamera_start(pygray_CameraObject* self) {
 	if(self->cam) {
 		Error error = self->cam->StartCapture();
@@ -171,7 +187,12 @@ static PyObject* PygrayCamera_getframestr(pygray_CameraObject* self) {
         Image convertedImage;
 
         // Convert the raw image
-        error = rawImage.Convert( PIXEL_FORMAT_MONO8, &convertedImage );
+	if(self->useColor) {
+	  error = rawImage.Convert( PIXEL_FORMAT_RGB8, &convertedImage );
+	} else {
+	  error = rawImage.Convert( PIXEL_FORMAT_MONO8, &convertedImage );
+	}
+
         if (error != PGRERROR_OK)
         {
             doCameraError(error);
@@ -213,6 +234,8 @@ static PyMethodDef PygrayCamera_methods[] = {
 	 "Grab a frame from the camera as a python string"},
 	{"getInfo", (PyCFunction)PygrayCamera_getinfo, METH_NOARGS,
 	 "Get information about the camera."},
+    {"setColorMode", (PyCFunction)PygrayCamera_setcolormode, METH_VARARGS,
+     "Set whether to return color images."},
     {NULL}  /* Sentinel */
 };
 
