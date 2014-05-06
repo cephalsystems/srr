@@ -1,6 +1,6 @@
 class cephal::packages {
 
-  # Required aptitude packages
+  # Required aptitude packages.
   $apt_packages = [ # Hardware support packages
                     'lm-sensors',
                     'bcmwl-kernel-source',
@@ -8,6 +8,7 @@ class cephal::packages {
                     # Development packages
                     'git',
                     'puppet',
+                    'python-pip',
                     'ssh',
                     'cmake',
                     'build-essential', 
@@ -28,6 +29,19 @@ class cephal::packages {
                     #'ros-hydro-desktop-full',
                     ]
 
+  # Required PIP packages.
+  $pip_packages = [ # Linting and formatting tools
+                    'pep8',
+                    'autopep8',
+                    ]
+
+  # Install the required pip packages.
+  package { $pip_packages:
+    ensure   => 'present',
+    provider => 'pip',
+    require  => Package['python-pip'],
+  }
+  
   # Require the aptitude puppet module.
   class { 'apt': 
     always_apt_update => true,
@@ -59,7 +73,7 @@ class cephal::packages {
   ->
   # Trigger installation of necessary packages.
   package { $apt_packages:
-    ensure   => latest,
+    ensure   => present,
     provider => 'aptitude',
     require  => Apt::Source[ 'ros' ],
   }
