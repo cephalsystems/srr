@@ -16,3 +16,6 @@
 # Build directories
 build/*
 devel/*
+
+# Sublime workspaces
+*.sublime-workspace
