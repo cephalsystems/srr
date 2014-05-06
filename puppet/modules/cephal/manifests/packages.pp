@@ -12,7 +12,6 @@ class cephal::packages {
                     'cmake',
                     'build-essential', 
                     'ipython',
-                    'python-dev',
                     # Point Grey dependencies
                     'libraw1394-11',
                     'libgtk2.0-0',
@@ -20,6 +19,9 @@ class cephal::packages {
                     'libglademm-2.4-dev',
                     'libgtkglextmm-x11-1.2-dev',
                     'libusb-1.0-0',
+                    # SRC build dependencies
+                    'python-dev',
+                    'python-opencv',
                     # ROS packages
                     #'ros-hydro-desktop-full',
                     ]
