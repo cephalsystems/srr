@@ -2,6 +2,7 @@
 #include <string>
 #include <sstream>
 #include "FlyCapture2.h"
+#include <iostream>
 
 using namespace FlyCapture2;
 
@@ -18,6 +19,13 @@ void doCameraError(Error& err) {
 	PyErr_SetString(CameraError, err.GetDescription());
 }
 
+void printGuid(PGRGuid& guid) {
+  std::cout << guid.value[0] << "|"
+	    << guid.value[1] << "|"
+	    << guid.value[2] << "|"
+	    << guid.value[3] << std::endl;
+}
+
 std::string guidToString(PGRGuid& guid) {
     std::stringstream ss;
     ss << std::hex << guid.value[0];
@@ -27,12 +35,19 @@ std::string guidToString(PGRGuid& guid) {
     return ss.str();
 }
 
-void stringToGuid(const char* s, PGRGuid& guid) {
-    std::stringstream ss(s);
-    ss >> std::hex >> guid.value[0];
-    ss >> std::hex >> guid.value[1];
-    ss >> std::hex >> guid.value[2];
-    ss >> std::hex >> guid.value[3];
+unsigned int hexStrToUInt(const std::string& src) {
+  std::stringstream ss(src);
+  unsigned int ret;
+  ss >> std::hex >> ret;
+  return ret;
+}
+
+void stringToGuid(const char* raws, PGRGuid& guid) {
+  std::string s(raws);
+  guid.value[0] = hexStrToUInt(s.substr( 0, 8));
+  guid.value[1] = hexStrToUInt(s.substr( 8, 8));
+  guid.value[2] = hexStrToUInt(s.substr(16, 8));
+  guid.value[3] = hexStrToUInt(s.substr(24, 8));
     //sscanf(s, "%x%x%x%x", &(guid.val[0]), &(guid.val[1]), &(guid.val[2]), &(guid.val[3]));
 }
 
@@ -86,6 +101,7 @@ PygrayCamera_init(pygray_CameraObject* self, PyObject* args, PyObject* kwds)
         return -1; 
     }
     stringToGuid(tempstr, guid);
+    printGuid(guid);
 
     self->cam = new Camera;
     self->camInfo = new CameraInfo;
@@ -292,6 +308,7 @@ pygray_listcams(PyObject *self, PyObject *args)
 	        doCameraError(error);
 	        return NULL;
         }
+	printGuid(guid);
         std::string guidStr = guidToString(guid);
         PyList_SetItem(ret, i, 
         	Py_BuildValue("s", guidStr.c_str()));
