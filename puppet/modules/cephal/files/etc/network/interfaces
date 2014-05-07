@@ -8,5 +8,6 @@ iface lo inet loopback
 # The primary network interface
 auto em1
 iface em1 inet static
-address 10.0.1.1
+address 10.0.0.128
 netmask 255.255.0.0
+gateway 10.0.0.1

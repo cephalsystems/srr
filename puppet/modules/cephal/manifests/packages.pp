@@ -68,7 +68,7 @@ class cephal::packages {
   # Do not install recommended packages by default.
   file { "/root/.aptitude/config":
     ensure  => present,
-    content => 'APT::Install-Recommends "0";\n',
+    content => 'APT::Install-Recommends "0";',
   }
   ->
   # Trigger installation of necessary packages.

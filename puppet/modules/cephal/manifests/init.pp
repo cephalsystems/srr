@@ -18,6 +18,21 @@ class cephal {
     mode   => '0644',
   }
 
+  # Replicate wireless hotspot profile.
+  file { '/etc/NetworkManager/system-connections/Hotspot':
+    source  => 'puppet:///modules/cephal/etc/NetworkManager/system-connections/Hotspot',
+    owner   => 'root',
+    group   => 'root',
+    mode    => '0600',
+    require => Package['network-manager']
+  }
+  ~>
+  # Start up wireless hotstop.
+  exec { 'start-wireless-hotspot':
+    path    => [ '/usr/bin', '/usr/sbin' ],
+    command => 'service network-manager restart && nmcli con up id Hotspot'
+  }
+  
   # Clone the SRC software.
   $repo_path = '/opt/cephal'
   $repo_uri = 'git@github.com:psigen/src.git'
