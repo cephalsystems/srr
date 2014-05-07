@@ -5,9 +5,17 @@ class cephal {
   # Add a nice message to the login prompt.
   file { '/etc/motd.tail' :
     source => 'puppet:///modules/cephal/etc/motd.tail',
-    owner => "root",
-    group => "root",
-    mode => "644",
+    owner  => 'root',
+    group  => 'root',
+    mode   => '0644',
+  }
+
+  # Set up static IP on wired ethernet device.
+  file { '/etc/network/interfaces':
+    source => 'puppet:///modules/cephal/etc/network/interfaces',
+    owner  => 'root',
+    group  => 'root',
+    mode   => '0644',
   }
 
   # Clone the SRC software.
@@ -35,7 +43,7 @@ class cephal {
     provider => git,
     source => $repo_uri,
   }
-
+  
   # Create symlinks to Roboclaw USB devices.
   # Roboclaw for drivetrain.
   file { '/dev/roboclaw_drive':
