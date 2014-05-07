@@ -30,7 +30,7 @@ class cephal {
   # Start up wireless hotstop.
   exec { 'start-wireless-hotspot':
     path    => [ '/usr/bin', '/usr/sbin' ],
-    command => 'service network-manager restart && nmcli con up id Hotspot'
+    command => 'nmcli con up id Hotspot'
   }
   
   # Clone the SRC software.
