@@ -12,6 +12,10 @@ Hardware configuration
 | Roboclaw 15A | /dev/roboclaw_rake  | MIDDLE   | pci-0000:04:00.0-usb-0:1:1.0 |
 | Roboclaw 15A | /dev/roboclaw_bag   | BOTTOM   | pci-0000:04:00.0-usb-0:2:1.0 |
 
+| Eth Device | IP Address | Subnet      |
+| ---------- | ---------- | ----------- |
+| em1        | 10.0.1.1   | 255.255.0.0 |
+
 Contents
 --------
   * src - Source code for ROS packages.
