@@ -5,40 +5,87 @@ import pygray
 import pygrayutils
 import time
 
-# todo: convert this to argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("-p", "--pattern",
+                    help="sprintf type pattern for frame filenames.",
+                    default="frames/frame%d.png")
+parser.add_argument("-i", "--index",
+                    help="Camera index (not consistent!)", type=int, default=0)
+parser.add_argument("-s", "--serialnumber",
+                    help="Camera serial number", type=int, default=0)
+parser.add_argument("-c", "--color", help="Whether to use color",
+                    type=bool, default=False)
+parser.add_argument("-n", "--numframes", type=int, default=100,
+                    help="Number of frames to record.")
+parser.add_argument("--buffer", type=bool, default=False,
+                    help="Whether to buffer frames in RAM while capturing")
+parser.add_argument("--list",
+                    help="List cameras (overrides all other options)",
+                    action="store_true")
+args = parser.parse_args()
+
+
+def print_cameras(camlist):
+    for guid in camlist:
+        cam = pygray.Camera(guid)
+        print(repr(cam.getinfo()))
+
+
+def get_cam_by_serial(serialnum, camlist):
+    for guid in camlist:
+        cam = pygray.Camera(guid)
+        caminfo = cam.getinfo()
+        if caminfo.serial_number == serialnum:
+            return cam
+    return None
+
 cams = pygray.listcams()
-tarcam = int(sys.argv[1])
-destpatt = sys.argv[2]
-usecolor = (int(sys.argv[3]) > 0)
-nframes = int(sys.argv[4])
+cam = None
 
-cam = pygray.Camera(cams[tarcam])
-caminfo = cam.getInfo()
+if args.list:
+    print_cameras(cams)
+    return
 
-if usecolor:
-    cam.setColorMode(True)
-    
+if args.serialnumber > 0:
+    cam = get_cam_by_serial(args.serialnumber)
+    if not cam:
+        print("No camera found with serial number %d" % args.serialnumber)
+        print("Run with --list argument to get camera information.")
+        return
+else:
+    cam = pygray.Camera(cams[args.index])
+
+if args.color:
+    cam.setcolormode(True)
+
 cam.start()
 starttime = time.time()
 framebuf = []
-for frameid in range(nframes):
+frameid = 0
+for rawid in range(args.numframes):
     try:
-        camdata = cam.getFrameStr()
+        camdata = cam.getframe()
         imdata = pygrayutils.framestr_to_array(camdata)
-        framebuf.append(imdata)
-    except pygray.cameraError as e:
-        print("Had a camera error, but ignoring: " + str(e))
-        
+        if args.buffer:
+            framebuf.append((frameid, imdata))
+        else:
+            destfn = args.pattern % frameid
+            cv2.imwrite(destfn, imdata)
+        frameid += 1
+    except pygray.FrameError as e:
+        print("Had a frame error, but ignoring: " + str(e))
+
 endtime = time.time()
 cam.stop()
 
-print("Captured %d frames in %f seconds." % (nframes, endtime - starttime))
+nframes = frameid
 
-starttime = time.time()
-for frameid, imdata in enumerate(framebuf):
-    destfn = destpatt % frameid
-    print("Framed %d --> %s" % (frameid, destfn))
-    cv2.imwrite(destfn, imdata)
-endtime = time.time()
+if args.buffer:
+    print("Captured %d frames in %f seconds." % (nframes, endtime - starttime))
+    starttime = time.time()
+    for frameid, imdata in framebuf:
+        destfn = destpatt % frameid
+        cv2.imwrite(destfn, imdata)
+    endtime = time.time()
 
-print("Wrote %d frames in %f seconds." % (nframes, endtime-starttime))
+print("Wrote %d frames in %f seconds." % (nframes, endtime - starttime))
