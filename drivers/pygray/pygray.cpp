@@ -14,10 +14,16 @@ typedef struct {
 } pygray_CameraObject;
 
 static PyObject* CameraError;
+static PyObject* FrameError;
 
 void doCameraError(Error& err) {
 	err.PrintErrorTrace();
 	PyErr_SetString(CameraError, err.GetDescription());
+}
+
+void doFrameError(Error& err) {
+    err.PrintErrorTrace();
+    PyErr_SetString(FrameError, err.GetDescription());
 }
 
 void printGuid(PGRGuid& guid) {
@@ -215,13 +221,13 @@ static PyObject* PygrayCamera_getinfo(pygray_CameraObject* self) {
 	PyObject *d = PyDict_New();
 	if(self->camInfo) {
 		CameraInfo* info = self->camInfo;
-	    PyDict_SetItemString(d, "serialNumber", PyInt_FromLong(info->serialNumber));
-	    PyDict_SetItemString(d, "modelName", PyString_FromString(info->modelName));
-	    PyDict_SetItemString(d, "vendorName", PyString_FromString(info->vendorName));
-	    PyDict_SetItemString(d, "sensorInfo", PyString_FromString(info->sensorInfo));
-	    PyDict_SetItemString(d, "sensorResolution", PyString_FromString(info->sensorResolution));
-	    PyDict_SetItemString(d, "firmwareVersion", PyString_FromString(info->firmwareVersion));
-	    PyDict_SetItemString(d, "firmwareBuildTime", PyString_FromString(info->firmwareBuildTime));
+	    PyDict_SetItemString(d, "serial_number", PyInt_FromLong(info->serialNumber));
+	    PyDict_SetItemString(d, "model_name", PyString_FromString(info->modelName));
+	    PyDict_SetItemString(d, "vendor_name", PyString_FromString(info->vendorName));
+	    PyDict_SetItemString(d, "sensor_info", PyString_FromString(info->sensorInfo));
+	    PyDict_SetItemString(d, "sensor_resolution", PyString_FromString(info->sensorResolution));
+	    PyDict_SetItemString(d, "firmware_version", PyString_FromString(info->firmwareVersion));
+	    PyDict_SetItemString(d, "firmware_build_time", PyString_FromString(info->firmwareBuildTime));
 	}
     return d;
 }
@@ -231,11 +237,11 @@ static PyMethodDef PygrayCamera_methods[] = {
      "Start capturing from the camera"},
     {"stop", (PyCFunction)PygrayCamera_stop, METH_NOARGS,
      "Stop capturing from the camera"},
-    {"getFrameStr", (PyCFunction)PygrayCamera_getframestr, METH_NOARGS,
+    {"getframe", (PyCFunction)PygrayCamera_getframestr, METH_NOARGS,
 	 "Grab a frame from the camera as a python string"},
-	{"getInfo", (PyCFunction)PygrayCamera_getinfo, METH_NOARGS,
+	{"getinfo", (PyCFunction)PygrayCamera_getinfo, METH_NOARGS,
 	 "Get information about the camera."},
-    {"setColorMode", (PyCFunction)PygrayCamera_setcolormode, METH_VARARGS,
+    {"setcolormode", (PyCFunction)PygrayCamera_setcolormode, METH_VARARGS,
      "Set whether to return color images."},
     {NULL}  /* Sentinel */
 };
@@ -370,8 +376,13 @@ initpygray(void)
 
     // PyErr_NewException requires a non-constant char* for the name, 
     // probably due to an oversight, hence this strange little dance
-    char errName[] = "pygray.cameraError\0";
+    char errName[] = "pygray.CameraError\0";
     CameraError = PyErr_NewException(errName, NULL, NULL);
     Py_INCREF(CameraError);
-    PyModule_AddObject(m, "cameraError", CameraError);
+    PyModule_AddObject(m, "CameraError", CameraError);
+
+    char errName2[] = "pygray.FrameError\0";
+    FrameError = PyErr_NewException(errName2, NULL, NULL);
+    Py_INCREF(FrameError);
+    PyModule_AddObject(m, "FrameError", FrameError);
 }
