@@ -186,9 +186,9 @@ static PyObject* PygrayCamera_getframestr(pygray_CameraObject* self) {
         // Create a converted image
         Image convertedImage;
 
-        // Convert the raw image
+        // Convert the raw image (BGR because that's what opencv likes)
 	if(self->useColor) {
-	  error = rawImage.Convert( PIXEL_FORMAT_RGB8, &convertedImage );
+	  error = rawImage.Convert( PIXEL_FORMAT_BGR, &convertedImage );
 	} else {
 	  error = rawImage.Convert( PIXEL_FORMAT_MONO8, &convertedImage );
 	}
@@ -204,7 +204,8 @@ static PyObject* PygrayCamera_getframestr(pygray_CameraObject* self) {
         int imrows = convertedImage.GetRows();
         int stride = convertedImage.GetStride();
         int datasize = convertedImage.GetDataSize();
-        return Py_BuildValue("iiis#", imrows, imcols, stride, (char*)(convertedImage.GetData()), datasize);
+	
+        return Py_BuildValue("iiiis#", imrows, imcols, stride, datasize, (char*)(convertedImage.GetData()), datasize);
 	} else {
 	  Py_RETURN_NONE;
 	}
