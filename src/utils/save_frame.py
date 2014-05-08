@@ -14,7 +14,7 @@ def main():
     parser.add_argument("-s", "--serialnumber",
                         help="Camera serial number", type=int, default=0)
     parser.add_argument("-c", "--color", help="Whether to use color",
-                        type=bool, default=False)
+                        type=int, default=0)
     parser.add_argument("--list",
                         help="List cameras (overrides all other options)",
                         action="store_true")
@@ -31,7 +31,7 @@ def main():
         for guid in camlist:
             cam = pygray.Camera(guid)
             caminfo = cam.getinfo()
-            if caminfo.serial_number == serialnum:
+            if caminfo["serial_number"] == serialnum:
                 return cam
         return None
 
@@ -43,7 +43,7 @@ def main():
         return
 
     if args.serialnumber > 0:
-        cam = get_cam_by_serial(args.serialnumber)
+        cam = get_cam_by_serial(args.serialnumber, cams)
         if not cam:
             print("No camera found with serial number %d" % args.serialnumber)
             print("Run with --list argument to get camera information.")
@@ -52,7 +52,10 @@ def main():
         cam = pygray.Camera(cams[args.index])
 
     if args.color:
+        print("Capturing color image")
         cam.setcolormode(True)
+    else:
+        print("Capturing mono image")
     cam.start()
     camdata = cam.getframe()
     cam.stop()

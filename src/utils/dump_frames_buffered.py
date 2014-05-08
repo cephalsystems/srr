@@ -4,6 +4,7 @@ import cv2
 import pygray
 import pygrayutils
 import time
+import argparse
 
 def main():
     parser = argparse.ArgumentParser()
@@ -15,7 +16,7 @@ def main():
     parser.add_argument("-s", "--serialnumber",
                         help="Camera serial number", type=int, default=0)
     parser.add_argument("-c", "--color", help="Whether to use color",
-                        type=bool, default=False)
+                        type=int, default=0)
     parser.add_argument("-n", "--numframes", type=int, default=100,
                         help="Number of frames to record.")
     parser.add_argument("--buffer", type=bool, default=False,
@@ -36,7 +37,7 @@ def main():
         for guid in camlist:
             cam = pygray.Camera(guid)
             caminfo = cam.getinfo()
-            if caminfo.serial_number == serialnum:
+            if caminfo["serial_number"] == serialnum:
                 return cam
         return None
 
@@ -48,7 +49,7 @@ def main():
         return
 
     if args.serialnumber > 0:
-        cam = get_cam_by_serial(args.serialnumber)
+        cam = get_cam_by_serial(args.serialnumber, cams)
         if not cam:
             print("No camera found with serial number %d" % args.serialnumber)
             print("Run with --list argument to get camera information.")
@@ -57,7 +58,10 @@ def main():
         cam = pygray.Camera(cams[args.index])
 
     if args.color:
+        print("Capturing color images.")
         cam.setcolormode(True)
+    else:
+        print("Capturing mono images.")
 
     cam.start()
     starttime = time.time()
@@ -85,7 +89,7 @@ def main():
         print("Captured %d frames in %f seconds." % (nframes, endtime - starttime))
         starttime = time.time()
         for frameid, imdata in framebuf:
-            destfn = destpatt % frameid
+            destfn = args.pattern % frameid
             cv2.imwrite(destfn, imdata)
         endtime = time.time()
 
