@@ -779,7 +779,7 @@ class Roboclaw(object):
     #######################################     
     
     @m1_velocity_pid.setter
-    def m1_velocity_pid(self, value):
+    def m1_velocity_pid(self, p_i_d_qpps):
         """
         28 - Set PID Constants M1
 
@@ -792,16 +792,24 @@ class Roboclaw(object):
         Derivative. The defaults values are:
 
         QPPS = 44000 
-        P = 0x00010000 
-        I = 0x00008000 
-        D = 0x00004000
+        P = 0x00010000 = 65536
+        I = 0x00008000 = 32768
+        D = 0x00004000 = 16384
 
         QPPS is the speed of the encoder when the motor is at 100% power.
         """
-        raise NotImplementedError()
+        p, i, d, qpps = p_i_d_qpps
+        
+        with self._device_lock:
+            self._send_command(28)
+            self._write_long(d)
+            self._write_long(p)
+            self._write_long(i)
+            self._write_long(qpps)
+            self._write_checksum();
 
     @m2_velocity_pid.setter
-    def m2_velocity_pid(self, value):
+    def m2_velocity_pid(self, p_i_d_qpps):
         """
         29 - Set PID Constants M2
 
@@ -814,14 +822,22 @@ class Roboclaw(object):
         Derivative. The defaults values are:
 
         QPPS = 44000
-        P = 0x00010000
-        I = 0x00008000
-        D = 0x00004000
+        P = 0x00010000 = 65535
+        I = 0x00008000 = 32768
+        D = 0x00004000 = 16384
         
         QPPS is the speed of the encoder when the motor is at 100%
         power. P, I, D are the default values used after a reset.
         """
-        raise NotImplementedError()
+        p, i, d, qpps = p_i_d_qpps
+        
+        with self._device_lock:
+            self._send_command(29)
+            self._write_long(d)
+            self._write_long(p)
+            self._write_long(i)
+            self._write_long(qpps)
+            self._write_checksum();
     
     @property
     def m1_current_speed(self):
@@ -835,7 +851,15 @@ class Roboclaw(object):
         Uses:
         30 - Read Current Speed M1        
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(30)
+            enc = self._read_slong()
+            status = self._read_byte()
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return (enc, status)
+            else:
+                raise ValueError("Checksum mismatch.")
 
     @property
     def m2_current_speed(self):
@@ -849,9 +873,17 @@ class Roboclaw(object):
         Uses:
         31 - Read Current Speed M1        
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(31)
+            enc = self._read_slong()
+            status = self._read_byte()
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return (enc, status)
+            else:
+                raise ValueError("Checksum mismatch.")
 
-    def drive_m1_signed_duty(self, value):
+    def m1_set_duty(self, value):
         """
         32 - Drive M1 With Signed Duty Cycle
 
@@ -859,9 +891,12 @@ class Roboclaw(object):
         control the speed of the motor without a quadrature
         encoder. The duty value is signed and the range is +/-1500.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(32)
+            self._write_sword(value)
+            self._write_checksum()
 
-    def drive_m2_signed_duty(self, value):
+    def m2_set_duty(self, value):
         """
         33 - Drive M2 With Signed Duty Cycle
 
@@ -869,9 +904,12 @@ class Roboclaw(object):
         control the speed of the motor without a quadrature
         encoder. The duty value is signed and the range is +/-1500.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(33)
+            self._write_sword(value)
+            self._write_checksum()
 
-    def drive_mix_signed_duty(self, value_m1, value_m2):
+    def mixed_set_duty(self, value_m1, value_m2):
         """
         34 - Mix Mode Drive M1 / M2 With Signed Duty Cycle
 
@@ -879,9 +917,13 @@ class Roboclaw(object):
         is used to control the speed of the motor without a quadrature
         encoder. The duty value is signed and the range is +-1500.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(34)
+            self._write_sword(value_m1)
+            self._write_sword(value_m2)
+            self._write_checksum()
 
-    def drive_m1_signed_speed(self, value):
+    def m1_set_speed(self, speed):
         """
         35 - Drive M1 With Signed Speed
 
@@ -894,9 +936,12 @@ class Roboclaw(object):
         accelerate as fast as possible until the defined rate is
         reached.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(35)
+            self._write_slong(speed)
+            self._write_checksum()
 
-    def drive_m2_signed_speed(self, value):
+    def m2_set_speed(self, speed):
         """
         36 - Drive M2 With Signed Speed
 
@@ -909,9 +954,12 @@ class Roboclaw(object):
         accelerate as fast as possible until the defined rate is
         reached.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(36)
+            self._write_slong(speed)
+            self._write_checksum();
 
-    def drive_mix_signed_speed(self, value_m1, value_m2):
+    def mixed_set_speed(self, speed_m1, speed_m2):
         """
         37 - Mix Mode Drive M1 / M2 With Signed Speed
 
@@ -924,9 +972,13 @@ class Roboclaw(object):
         sent the motor will begin to accelerate as fast as possible
         until the rate defined is reached.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(37)
+            self._write_slong(speed_m1)
+            self._write_slong(speed_m2)
+            self._write_checksum()
 
-    def drive_m1_signed_speed_acceleration(self, speed, acceleration):
+    def m1_set_speed_accel(self, speed, accel):
         """
         38 - Drive M1 With Signed Speed And Acceleration
 
@@ -948,9 +1000,13 @@ class Roboclaw(object):
         acceleration value of 24,000 QPPS and a speed value of 12,000
         QPPS would accelerate the motor to 12,000 QPPS in 0.5 seconds.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(38)
+            self._write_long(accel)
+            self._write_slong(speed)
+            self._write_checksum()
 
-    def drive_m2_signed_speed_acceleration(self, speed, acceleration):
+    def m2_set_speed_accel(self, speed, accel):
         """
         39 - Drive M2 With Signed Speed And Acceleration
 
@@ -972,9 +1028,13 @@ class Roboclaw(object):
         acceleration value of 24,000 QPPS and a speed value of 12,000
         QPPS would accelerate the motor to 12,000 QPPS in 0.5 seconds.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(39)
+            self._write_long(accel)
+            self._write_slong(speed)
+            self._write_checksum()
 
-    def drive_mix_signed_speed_acceleration(self, speed_m1, speed_m2, acceleration):
+    def mixed_set_speed_accel(self, accel, speed_m1, speed_m2):
         """
         40 - Mix Mode Drive M1 / M2 With Signed Speed And Acceleration
 
@@ -998,9 +1058,14 @@ class Roboclaw(object):
         acceleration value of 24,000 QPPS and a speed value of 12,000
         QPPS would accelerate the motor to 12,000 QPPS in 0.5 seconds.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(40)
+            self._write_long(accel)
+            self._write_slong(speed_m1)
+            self._write_slong(speed_m2)
+            self._write_checksum()
 
-    def buffered_drive_m1_signed_speed_distance(self, speed, distance, buffered=True):
+    def m1_set_speed_distance(self, speed, distance, buffered=False):
         """
         41 - Buffered M1 Drive With Signed Speed And Distance
 
@@ -1022,9 +1087,14 @@ class Roboclaw(object):
         command is stopped, any other commands in the buffer are
         deleted and the new command is executed.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(41)
+            self._write_slong(speed)
+            self._write_long(distance)
+            self._write_byte(buffered)
+            self._write_checksum()
 
-    def buffered_drive_m2_signed_speed_distance(self, speed, distance, buffered=True):
+    def m2_set_speed_distance(self, speed, distance, buffered=False):
         """
         42 - Buffered M2 Drive With Signed Speed And Distance
 
@@ -1046,9 +1116,14 @@ class Roboclaw(object):
         command is stopped, any other commands in the buffer are
         deleted and the new command is executed.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(42)
+            self._write_slong(speed)
+            self._write_long(distance)
+            self._write_byte(buffered)
+            self._write_checksum()
 
-    def buffered_drive_mix_signed_speed_distance(self, speed_m1, distance_m1, speed_m2, distance_m2, buffered=True):
+    def mixed_set_speed_distance(self, speed_m1, distance_m1, speed_m2, distance_m2, buffered=False):
         """
         43 - Buffered Mix Mode Drive M1 / M2 With Signed Speed And Distance
 
@@ -1068,9 +1143,16 @@ class Roboclaw(object):
         command is stopped, any other commands in the buffer are
         deleted and the new command is executed.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(43)
+            self._write_slong(speed_m1)
+            self._write_long(distance_m1)
+            self._write_slong(speed_m2)
+            self._write_long(distance_m2)
+            self._write_byte(buffered)
+            self._write_checksum()
 
-    def buffered_drive_m1_signed_speed_accel_distance(self, speed, acceleration, distance, buffered=True):
+    def m1_set_speed_accel_distance(self, speed, accel, distance, buffered=False):
         """
         44 - Buffered M1 Drive With Signed Speed, Accel And Distance
 
@@ -1093,9 +1175,15 @@ class Roboclaw(object):
         command is stopped, any other commands in the buffer are
         deleted and the new command is executed.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(44)
+            self._write_long(accel)
+            self._write_slong(speed)
+            self._write_long(distance)
+            self._write_byte(buffer)
+            self._write_checksum()
 
-    def buffered_drive_m2_signed_speed_accel_distance(self, speed, acceleration, distance, buffered=True):
+    def m2_set_speed_accel_distance(self, speed, accel, distance, buffered=False):
         """
         45 - Buffered M2 Drive With Signed Speed, Accel And Distance
 
@@ -1118,9 +1206,15 @@ class Roboclaw(object):
         command is stopped, any other commands in the buffer are
         deleted and the new command is executed.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(45)
+            self._write_long(accel)
+            self._write_slong(speed)
+            self._write_long(distance)
+            self._write_byte(buffer)
+            self._write_checksum()
 
-    def buffered_drive_mix_signed_speed_accel_distance(self, acceleration, speed_m1, distance_m1, speed_m2, distance_m2):
+    def mixed_set_speed_accel_distance(self, accel, speed_m1, distance_m1, speed_m2, distance_m2, buffered=False):
         """
         46 - Buffered Mix Mode Drive M1 / M2 With Signed Speed, Accel And Distance
 
@@ -1143,7 +1237,15 @@ class Roboclaw(object):
         command is stopped, any other commands in the buffer are
         deleted and the new command is executed.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(46)
+            self._write_long(accel)
+            self._write_slong(speed_m1)
+            self._write_long(distance_m1)
+            self._write_slong(speed_m2)
+            self._write_long(distance_m2)
+            self._write_byte(buffered)
+            self._write_checksum()
 
     @property
     def buffer_length(self):
@@ -1161,9 +1263,17 @@ class Roboclaw(object):
         Uses:
         47 - Read Buffer Length
         """
-        raise NotImplementedError()
-
-    def drive_mix_signed_speed_indiv_accels(self, acceleration_m1, speed_m1, acceleration_m2, speed_m2):
+        with self._device_lock:
+            self._send_command(47);
+            buffer1 = self._read_byte();
+            buffer2 = self._read_byte();
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return (buffer1,buffer2);
+            else:
+                raise ValueError("Checksum mismatch.")
+            
+    def mixed_set_speed_iaccels(self, accel_m1, speed_m1, accel_m2, speed_m2):
         """
         50 - Mix Mode Drive M1 / M2 With Signed Speed And Individual Accelerations
 
@@ -1185,9 +1295,15 @@ class Roboclaw(object):
         acceleration value of 24,000 QPPS and a speed value of 12,000
         QPPS would accelerate the motor to 12,000 QPPS in 0.5 seconds
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(50)
+            self._write_long(accel_m1)
+            self._write_slong(speed_m1)
+            self._write_long(accel_m2)
+            self._write_slong(speed_m2)
+            self._write_checksum()
 
-    def buffered_drive_mix_signed_speed_indiv_accel_distance(self, acceleration_m1, speed_m1, distance_m1, acceleration_m2, speed_m2, distance_m2, buffered=True):
+    def mixed_set_speed_iaccel_distance(self, accel_m1, speed_m1, distance_m1, accel_m2, speed_m2, distance_m2, buffered=False):
         """
         51 - Buffered Mix Mode Drive M1 / M2 With Signed Speed, Individual Accel And Distance
         
@@ -1210,9 +1326,18 @@ class Roboclaw(object):
         command is stopped, any other commands in the buffer are
         deleted and the new command is executed.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(51)
+            self._write_long(accel_m1)
+            self._write_slong(speed_m1)
+            self._write_long(distance_m1)
+            self._write_long(accel_m2)
+            self._write_slong(speed_m2)
+            self._write_long(distance_m2)
+            self._write_byte(buffered)
+            self._write_checksum()
 
-    def drive_m1_signed_duty_accel(self, duty, acceleration):
+    def m1_set_duty_accel(self, accel, duty):
         """
         52 - Drive M1 With Signed Duty And Acceleration
 
@@ -1226,9 +1351,13 @@ class Roboclaw(object):
         The duty value is signed and the range is +/-1500.
         The accel value range is 0 to 65535.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(52)
+            self._write_sword(duty)
+            self._write_word(accel)
+            self._write_checksum()
     
-    def drive_m2_signed_duty_accel(self, duty, acceleration):
+    def m2_set_duty_accel(self, accel, duty):
         """
         53 - Drive M2 With Signed Duty And Acceleration
         
@@ -1242,9 +1371,13 @@ class Roboclaw(object):
         The duty value is signed and the range is +/-1500.
         The accel value range is 0 to 65535.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(53)
+            self._write_sword(duty)
+            self._write_word(accel)
+            self._write_checksum()
 
-    def drive_mix_signed_duty_accel(self, duty_m1, accel_m1, duty_m2, accel_m2):
+    def mixed_set_duty_accel(self, accel_m1, duty_m1, accel_m2, duty_m2):
         """
         Drive M1 and M2 in the same command using acceleration and
         duty values for each motor. The sign indicates which direction
@@ -1255,10 +1388,16 @@ class Roboclaw(object):
         The duty value is signed and the range is +/-1500.
         The accel value range is 0 to 65535.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(54)
+            self._write_sword(duty_m1)
+            self._write_word(accel_m1)
+            self._write_sword(duty_m2)
+            self._write_word(accel_m2)
+            self._write_checksum()
 
-    @property 
-    def m1_position_pid(self):
+    @m1_position_pid.setter
+    def m1_position_pid(self, p_i_d_imax_dz_min_max):
         """
         The RoboClaw Position PID system consist of seven constants
         starting with P = Proportional, I= Integral and D= Derivative,
@@ -1274,10 +1413,20 @@ class Roboclaw(object):
         61 - Set Motor 1 Position PID Constants
         63 - Read Motor 1 Position P, I, D Constants
         """
-        raise NotImplementedError()
+        p,i,d,imax,deadzone,min,max = p_i_d_imax_dz_min_max
+        
+        with self._device_lock:
+            self._send_command(61)
+            self._write_long(p)
+            self._write_long(i)
+            self._write_long(d)
+            self._write_long(imax)
+            self._write_long(deadzone)
+            self._write_long(min);
+            self._write_long(max);
 
-    @property 
-    def m2_position_pid(self):
+    @m2_position_pid.setter
+    def m2_position_pid(self, value):
         """
         The RoboClaw Position PID system consist of seven constants
         starting with P = Proportional, I= Integral and D= Derivative,
@@ -1293,9 +1442,19 @@ class Roboclaw(object):
         62 - Set Motor 2 Position PID Constants
         64 - Read Motor 2 Position P, I, D Constants
         """
-        raise NotImplementedError()
+        p,i,d,imax,deadzone,min,max = p_i_d_imax_dz_min_max
+        
+        with self._device_lock:
+            self._send_command(62)
+            self._write_long(p)
+            self._write_long(i)
+            self._write_long(d)
+            self._write_long(imax)
+            self._write_long(deadzone)
+            self._write_long(min);
+            self._write_long(max);
 
-    def drive_m1_signed_speed_accel_decel_position(self, acceleration, speed, deceleration, position):
+    def m1_set_speed_accel_decel_position(self, accel, speed, decel, position):
         """
         65 - Drive M1 with signed Speed, Accel, Deccel and Position
 
@@ -1305,9 +1464,16 @@ class Roboclaw(object):
         sets the speed in quadrature pulses the motor will run at
         after acceleration and before decceleration.
         """
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(65)
+            self._write_long(accel)
+            self._write_long(speed)
+            self._write_long(deccel)
+            self._write_long(position)
+            self._write_byte(buffer)
+            self._write_checksum()
 
-    def drive_m2_signed_speed_accel_decel_position(self, acceleration, speed, deceleration, position):
+    def m2_set_speed_accel_decel_position(self, accel, speed, decel, position):
         """
         66 - Drive M2 with signed Speed, Accel, Deccel and Position
 
@@ -1317,9 +1483,16 @@ class Roboclaw(object):
         sets the speed in quadrature pulses the motor will run at
         after acceleration and before decceleration.
         """
-        raise NotImplementedError()
-
-    def drive_mix_signed_speed_accel_decel_position(self, acceleration, speed, deceleration, position):
+        with self._device_lock:
+            self._send_command(66)
+            self._write_long(accel)
+            self._write_long(speed)
+            self._write_long(deccel)
+            self._write_long(position)
+            self._write_byte(buffer)
+            self._write_checksum()
+        
+    def mixed_set_speed_accel_decel_position(self, accel_m1, speed_m1, decel_m1, position_m1, accel_m2, speed_m2, decel_m2, position_m2, buffered=False):
         """
         67 - Drive M1 & M2 with signed Speed, Accel, Deccel and Position
 
@@ -1329,8 +1502,18 @@ class Roboclaw(object):
         value. QSpeed sets the speed in quadrature pulses the motor
         will run at after acceleration and before decceleration.
         """
-        # TODO: The parameters for this command in the docs seems wrong...
-        raise NotImplementedError()
+        with self._device_lock:
+            self._send_command(67)
+            self._write_long(accel1)
+            self._write_long(speed1)
+            self._write_long(deccel1)
+            self._write_long(position1)
+            self._write_long(accel2)
+            self._write_long(speed2)
+            self._write_long(deccel2)
+            self._write_long(position2)
+            self._write_byte(buffer)
+            self._write_checksum()
 
     def _write(self, value):
         try:
