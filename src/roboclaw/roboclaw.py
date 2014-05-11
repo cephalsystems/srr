@@ -5,7 +5,7 @@ import threading
 
 class Roboclaw(object):
     
-    def init(self, port=None, address=0x80):
+    def __init__(self, port=None, address=0x80):
         # Create a lock for synchronizing changes to the actual
         # connection to the device.
         self._device_lock = threading.Lock()
@@ -13,8 +13,8 @@ class Roboclaw(object):
         # Initialize the connection to the device (as initially
         # disconnected).
         with self._device_lock:
+            self._device = serial.Serial(port=None, timeout=0.250)
             self._port = port
-            self._dev = None
             self._address = address
             self._checksum = 0
 
@@ -26,15 +26,15 @@ class Roboclaw(object):
     @port.setter
     def port(self, value):
         with self._device_lock:
+            self._device.port = None
             self._port = value
-            self._dev = None
 
     @property
     def address(self):
         with self._device_lock:
             return self._address
 
-    @port.setter
+    @address.setter
     def address(self, value):
         with self._device_lock:
             self._address = address
@@ -1297,52 +1297,52 @@ class Roboclaw(object):
         # TODO: The parameters for this command in the docs seems wrong...
         raise NotImplementedError()
 
-    def _write(value):
+    def _write(self, value):
         with self._device_lock:
-            if self._device is None:
-                self._device = ser = serial.Serial(self._port, 38400)
+            if self._device.port is None:
+                self._device.port = self._port
             self._device.write(value)
 
-    def _read(length):
+    def _read(self, length):
         with self._device_lock:
-            if self._device is None:
-                self._device = ser = serial.Serial(self._port, 38400)
+            if self._device.port is None:
+                self._device.port = self._port
             self._device.read(length)
 
-    def _send_command(command):
+    def _send_command(self, command):
         with self._device_lock:
             self._checksum = self._address
             self._write(chr(self._address))
             self._checksum += command
             self._write(chr(command))
 
-    def _read_byte():
+    def _read_byte(self):
         with self._device_lock:
             val = struct.unpack('>B', self._read(1))
             self._checksum += val[0]
             return val[0]
         
-    def _read_sbyte():
+    def _read_sbyte(self):
         with self._device_lock:
             val = struct.unpack('>b', self._read(1))
             self._checksum += val[0]
             return val[0]
 
-    def _read_word():
+    def _read_word(self):
         with self._device_lock:
             val = struct.unpack('>H', self._read(2))
             self._checksum += (val[0] & 0xFF)
             self._checksum += (val[0] >> 8) & 0xFF
             return val[0]
 
-    def _read_sword():
+    def _read_sword(self):
         with self._device_lock:
             val = struct.unpack('>h', self._read(2))
             self._checksum += val[0]
             self._checksum += (val[0] >> 8) & 0xFF
             return val[0]
 
-    def _read_long():
+    def _read_long(self):
         with self._device_lock:
             val = struct.unpack('>L', self._read(4))
             self._checksum += val[0]
@@ -1351,7 +1351,7 @@ class Roboclaw(object):
             self._checksum += (val[0] >> 24) & 0xFF
             return val[0]
 
-    def _read_slong():
+    def _read_slong(self):
         with self._device_lock:
             val = struct.unpack('>l', self._read(4))
             self._checksum += val[0]
@@ -1360,29 +1360,29 @@ class Roboclaw(object):
             self._checksum += (val[0] >> 24) & 0xFF
             return val[0]
         
-    def _write_byte(val):
+    def _write_byte(self, val):
         with self._device_lock:
             self._checksum += val
             return self._write(struct.pack('>B', val))
 
-    def _write_sbyte(val):
+    def _write_sbyte(self, val):
         with self._device_lock:
             self._checksum += val
             return self._write(struct.pack('>b', val))
 
-    def _write_word(val):
+    def _write_word(self, val):
         with self._device_lock:
             self._checksum += val
             self._checksum += (val >> 8) & 0xFF
             return self._write(struct.pack('>H', val))
 
-    def _write_sword(val):
+    def _write_sword(self, val):
         with self._device_lock:
             self._checksum += val
             self._checksum += (val >> 8) & 0xFF
             return self._write(struct.pack('>h', val))
         
-    def _write_long(val):
+    def _write_long(self, val):
         with self._device_lock:
             self._checksum += val
             self._checksum += (val >> 8) & 0xFF
@@ -1390,7 +1390,7 @@ class Roboclaw(object):
             self._checksum += (val >> 24) & 0xFF
             return self._write(struct.pack('>L', val))
 
-    def _write_slong(val):
+    def _write_slong(self, val):
         with self._device_lock:
             self._checksum += val
             self._checksum += (val >> 8) & 0xFF
@@ -1398,7 +1398,7 @@ class Roboclaw(object):
             self._checksum += (val >> 24) & 0xFF
             return self._write(struct.pack('>l', val))
 
-    def _write_checksum():
+    def _write_checksum(self):
         with self._device_lock:
             return self._write_byte(self._checksum & 0x7F);
         
