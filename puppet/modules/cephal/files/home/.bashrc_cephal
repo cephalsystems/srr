@@ -16,5 +16,5 @@ fi
 # Set up development python path.
 if [ -d "/opt/cephal/src" ]
 then
-    export PYTHON_PATH=${PYTHON_PATH}:/opt/cephal/src
+    export PYTHONPATH=${PYTHONPATH}:/opt/cephal/src
 fi
