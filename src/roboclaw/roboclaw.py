@@ -89,7 +89,7 @@ class Roboclaw(object):
         """
         # The formula for calculating the voltage is:
         # (Desired Volts - 6) x 5 = Value
-        val = (voltage - 6) * 5
+        value = round((voltage - 6) * 5)
 
         with self._device_lock:
             self._send_command(2)
@@ -111,7 +111,7 @@ class Roboclaw(object):
         """
         # The formula for calculating the voltage is:
         # Desired Volts x 5.12 = Value
-        val = voltage * 5.12
+        value = round(voltage * 5.12)
 
         with self._device_lock:
             self._send_command(3)
@@ -432,11 +432,10 @@ class Roboclaw(object):
         59 - Read Main Battery Voltage Settings
         57 - Set Main Battery Voltages
         """
-        # TODO: What are the units here?
         with self._device_lock:
             self._send_command(59)
-            min = self._read_word()
-            max = self._read_word()
+            min = self._read_word() * 0.1
+            max = self._read_word() * 0.1
             crc = self._checksum & 0x7F
             if crc == self._read_byte():
                 return (min, max)
@@ -452,11 +451,10 @@ class Roboclaw(object):
         60 - Read Logic Battery Voltage Settings
         58 - Set Logic Battery Voltages
         """
-        # TODO: What are the units here?
         with self._device_lock:
             self._send_command(60)
-            min = self._read_word()
-            max = self._read_word()
+            min = self._read_word() * 0.1
+            max = self._read_word() * 0.1
             crc = self._checksum & 0x7F
             if crc == self._read_byte():
                 return (min, max)
@@ -1535,7 +1533,7 @@ class Roboclaw(object):
         except serial.SerialException:
             self._device.close()
             self._device.port = None
-            return b''
+            return chr(0) * length
 
     def _send_command(self, command):
         self._checksum = self._address
@@ -1582,24 +1580,29 @@ class Roboclaw(object):
         return val[0]
         
     def _write_byte(self, val):
+        val = int(val)
         self._checksum += val
         return self._write(struct.pack('>B', val))
 
     def _write_sbyte(self, val):
+        val = int(val)
         self._checksum += val
         return self._write(struct.pack('>b', val))
 
     def _write_word(self, val):
+        val = int(val)
         self._checksum += val
         self._checksum += (val >> 8) & 0xFF
         return self._write(struct.pack('>H', val))
 
     def _write_sword(self, val):
+        val = int(val)
         self._checksum += val
         self._checksum += (val >> 8) & 0xFF
         return self._write(struct.pack('>h', val))
         
     def _write_long(self, val):
+        val = int(val)
         self._checksum += val
         self._checksum += (val >> 8) & 0xFF
         self._checksum += (val >> 16) & 0xFF
@@ -1607,6 +1610,7 @@ class Roboclaw(object):
         return self._write(struct.pack('>L', val))
 
     def _write_slong(self, val):
+        val = int(val)
         self._checksum += val
         self._checksum += (val >> 8) & 0xFF
         self._checksum += (val >> 16) & 0xFF
