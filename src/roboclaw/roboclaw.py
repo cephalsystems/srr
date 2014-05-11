@@ -56,7 +56,7 @@ class Roboclaw(object):
         """
         self._send_command(0)
         self._write_byte(value)
-        self._write_byte(checksum & 0x7F);
+        self._write_checksum()
 
     def m1_backward(self, value):
         """
@@ -68,7 +68,7 @@ class Roboclaw(object):
         """
         self._send_command(1)
         self._write_byte(value)
-        self._write_byte(checksum & 0x7F);
+        self._write_checksum()
 
     def set_main_voltage_minimum(self, voltage):
         """
@@ -87,7 +87,7 @@ class Roboclaw(object):
         
         self._send_command(2)
         self._write_byte(value)
-        self._write_byte(checksum & 0x7F);
+        self._write_checksum()
 
     def set_main_voltage_maximum(self, voltage):
         """
@@ -108,7 +108,7 @@ class Roboclaw(object):
         
         self._send_command(3)
         self._write_byte(value)
-        self._write_byte(checksum & 0x7F);
+        self._write_checksum()
         
     def m2_forward(self, value):
         """
@@ -120,7 +120,7 @@ class Roboclaw(object):
         """
         self._send_command(4)
         self._write_byte(value)
-        self._write_byte(checksum & 0x7F);
+        self._write_checksum()
 
     def m2_backward(self, value):
         """
@@ -132,7 +132,7 @@ class Roboclaw(object):
         """
         self._send_command(5)
         self._write_byte(value)
-        self._write_byte(checksum & 0x7F);
+        self._write_checksum()
 
     def m1_drive(self, value):
         """
@@ -144,7 +144,7 @@ class Roboclaw(object):
         """
         self._send_command(6)
         self._write_byte(value)
-        self._write_byte(checksum & 0x7F);
+        self._write_checksum()
     
     def m2_drive(self, value):
         """
@@ -156,7 +156,7 @@ class Roboclaw(object):
         """
         self._send_command(7)
         self._write_byte(value)
-        self._write_byte(checksum & 0x7F);                           
+        self._write_checksum()
 
     #######################################
     # Commands 8 - 13 Mix Mode Commands
@@ -178,7 +178,7 @@ class Roboclaw(object):
         """
         self._send_command(8)
         self._write_byte(value)
-        self._write_byte(checksum & 0x7F);
+        self._write_checksum()
 
     def mixed_backwards(self, value):
         """
@@ -189,7 +189,7 @@ class Roboclaw(object):
         """
         self._send_command(9)
         self._write_byte(value)
-        self._write_byte(checksum & 0x7F);
+        self._write_checksum()
 
     def mixed_right(self, value):
         """
@@ -201,7 +201,7 @@ class Roboclaw(object):
         """
         self._send_command(10)
         self._write_byte(value)
-        self._write_byte(checksum & 0x7F);
+        self._write_checksum()
 
     def mixed_left(self, value):
         """
@@ -213,7 +213,7 @@ class Roboclaw(object):
         """
         self._send_command(11)
         self._write_byte(value)
-        self._write_byte(checksum & 0x7F);
+        self._write_checksum()
 
     def mixed_drive(self, value):
         """
@@ -224,7 +224,7 @@ class Roboclaw(object):
         """
         self._send_command(12)
         self._write_byte(value)
-        self._write_byte(checksum & 0x7F);
+        self._write_checksum()
 
     def mixed_turn(self, value):
         """
@@ -236,7 +236,7 @@ class Roboclaw(object):
         """
         self._send_command(13)
         self._write_byte(value)
-        self._write_byte(checksum & 0x7F);
+        self._write_checksum()
 
     #######################################                                           
     # Version, Status, and Settings Commands
@@ -255,7 +255,8 @@ class Roboclaw(object):
         Uses:
         21 - Read Firmware Version
         """
-        raise NotImplementedError()
+        self._send_command(21)
+        return self._read(32)
 
     @property
     def main_voltage(self):
@@ -265,7 +266,13 @@ class Roboclaw(object):
         Uses:
         24 - Read Main Battery Voltage Level
         """
-        raise NotImplementedError()
+        self._send_command(24)
+        val = self._read_word() * 0.1
+        crc = checksum & 0x7F
+        if crc == self._read_byte():
+            return val
+        else:
+            raise ValueError("Checksum mismatch.")
 
     @property
     def logic_voltage(self):
@@ -275,7 +282,13 @@ class Roboclaw(object):
         Uses:
         25 - Read Logic Battery Voltage Level
         """
-        raise NotImplementedError()
+        self._send_command(25)
+        val = self._read_word() * 0.1
+        crc = checksum & 0x7F
+        if crc == self._read_byte():
+            return val
+        else:
+            raise ValueError("Checksum mismatch.")
     
     def set_logic_voltage_minimum(self, value):
         """
@@ -302,12 +315,19 @@ class Roboclaw(object):
     @property
     def motor_currents(self):
         """
-        The current draw from each motor in amps.
+        The current draw from each motor (in amps).
         
         Uses:
         49 - Read Motor Currents
         """
-        raise NotImplementedError()
+        self._send_command(49);
+        motor1 = self._read_word() * 0.010
+        motor2 = self._read_word() * 0.010
+        crc = checksum & 0x7F
+        if crc == self._read_byte():
+            return (motor1, motor2)
+        else:
+            raise ValueError("Checksum mismatch.")
 
     @property
     def m1_velocity_pid(self):
@@ -333,7 +353,16 @@ class Roboclaw(object):
         55 - Read Motor 1 Velocity P, I, D Constants
         28 - Set Velocity PID Constants for M1
         """
-        raise NotImplementedError()
+        self._send_command(55)
+        p = self._read_long()
+        i = self._read_long()
+        d = self._read_long()
+        qpps = self._read_long()
+        crc = checksum & 0x7F
+        if crc == self._read_byte():
+            return (p,i,d,qpps)
+        else:
+            raise ValueError("Checksum mismatch.")
 
     @property
     def m2_velocity_pid(self):
@@ -359,7 +388,16 @@ class Roboclaw(object):
         56 - Read Motor 2 Velocity P, I, D Constants
         29 - Set Velocity PID Constants for M2.
         """
-        raise NotImplementedError()
+        self._send_command(56)
+        p = self._read_long()
+        i = self._read_long()
+        d = self._read_long()
+        qpps = self._read_long()
+        crc = checksum & 0x7F
+        if crc == self._read_byte():
+            return (p,i,d,qpps)
+        else:
+            raise ValueError("Checksum mismatch.")
 
     @property
     def main_voltage_range(self):
@@ -370,7 +408,15 @@ class Roboclaw(object):
         59 - Read Main Battery Voltage Settings
         57 - Set Main Battery Voltages
         """
-        raise NotImplementedError()
+        # TODO: What are the units here?
+        self._send_command(59)
+        min = self._read_word()
+        max = self._read_word()
+        crc = checksum & 0x7F
+        if crc == self._read_byte():
+            return (min, max)
+        else:
+            raise ValueError("Checksum mismatch.")
 
     @property
     def logic_voltage_range(self):
@@ -381,7 +427,15 @@ class Roboclaw(object):
         60 - Read Logic Battery Voltage Settings
         58 - Set Logic Battery Voltages
         """
-        raise NotImplementedError()
+        # TODO: What are the units here?
+        self._send_command(60)
+        min = self._read_word()
+        max = self._read_word()
+        crc = checksum & 0x7F
+        if crc == self._read_byte():
+            return (min, max)
+        else:
+            raise ValueError("Checksum mismatch.")
 
     @main_voltage_range.setter
     def main_voltage_range(self, value):
@@ -390,6 +444,7 @@ class Roboclaw(object):
 
         Set the Main Battery Voltages cutoffs, Min and Max.
         """
+        # TODO: What are the units here?
         raise NotImplementedError()
 
     @logic_voltage_range.setter
@@ -399,6 +454,7 @@ class Roboclaw(object):
 
         Set the Logic Battery Voltages cutoffs, Min and Max.
         """
+        # TODO: What are the units here?
         raise NotImplementedError()
     
     @property
@@ -409,7 +465,19 @@ class Roboclaw(object):
         Uses:
         63 - Read Motor 1 Position P, I, D Constants
         """
-        raise NotImplementedError()
+        self._send_command(63)
+        p = self._read_long()
+        i = self._read_long()
+        d = self._read_long()
+        imax = self._read_long()
+        deadzone = self._read_long()
+        min = self._read_long()
+        max = self._read_long()
+        crc = checksum & 0x7F
+        if crc == self._read_byte():
+            return (p,i,d,imax,deadzone,min,max)
+        else:
+            raise ValueError("Checksum mismatch.")
 
     @property
     def m2_position_pid(self):
@@ -419,7 +487,19 @@ class Roboclaw(object):
         Uses:
         64 - Read Motor 2 Position P, I, D Constants
         """
-        raise NotImplementedError()
+        self._send_command(64)
+        p = self._read_long()
+        i = self._read_long()
+        d = self._read_long()
+        imax = self._read_long()
+        deadzone = self._read_long()
+        min = self._read_long()
+        max = self._read_long()
+        crc = checksum & 0x7F
+        if crc == self._read_byte():
+            return (p,i,d,imax,deadzone,min,max)
+        else:
+            raise ValueError("Checksum mismatch.")
         
     @property
     def temperature(self):
@@ -429,7 +509,13 @@ class Roboclaw(object):
         Uses:
         82 - Read Temperature
         """
-        raise NotImplementedError()
+        self._send_command(82);
+        val = self._read_word() * 0.1
+        crc = checksum & 0x7F
+        if crc == self._read_byte():
+            return val
+        else:
+            raise ValueError("Checksum mismatch.")
 
     @property
     def error_status(self):
@@ -448,7 +534,13 @@ class Roboclaw(object):
         Logic Battery High 0x40
         Logic Battery Low  0x80
         """
-        raise NotImplementedError()
+        self._send_command(90);
+        val = self._read_byte()
+        crc = checksum & 0x7F
+        if crc == self._read_byte():
+            return val
+        else:
+            raise ValueError("Checksum mismatch.")
 
     @property
     def m1_encoder_mode(self):
@@ -523,25 +615,73 @@ class Roboclaw(object):
 
     @property
     def m1_encoder(self):
-        # TODO: add rest of encoder status documentation.
         """
-        Decoder M1 counter and status.
+        Tuple of decoder M1 counter and status.
+        
+        Counter is a long variable which represents the current count
+        which can be any value from 0 - 4,294,967,295. Each pulse from
+        the quadrature encoder will increment or decrement the counter
+        depending on the direction of rotation.
+        
+        Status is the status byte for M1 decoder. It tracks counter
+        underflow, direction, overflow and if the encoder is
+        operational. The byte value represents:
+        
+        Bit0 - Counter Underflow (1= Underflow Occurred, Clear After Reading)
+        Bit1 - Direction (0 = Forward, 1 = Backwards)
+        Bit2 - Counter Overflow (1= Underflow Occurred, Clear After Reading)
+        Bit3 - Reserved
+        Bit4 - Reserved
+        Bit5 - Reserved
+        Bit6 - Reserved
+        Bit7 - Reserved
         
         Uses:
         16 - Read Quadrature Encoder Register M1
         """
-        raise NotImplementedError()
+        self._send_command(16)
+        enc = self._read_slong()
+        status = self._read_byte()
+        crc = checksum & 0x7F
+        if crc == self._read_byte()
+            return (enc, status)
+        else:
+            raise ValueError("Checksum mismatch.")
 
     @property
     def m2_encoder(self):
-        # TODO: add rest of encoder status documentation.
         """
-        Decoder M2 counter and status.
+        Tuple of decoder M2 counter and status.
+        
+        Counter is a long variable which represents the current count
+        which can be any value from 0 - 4,294,967,295. Each pulse from
+        the quadrature encoder will increment or decrement the counter
+        depending on the direction of rotation.
+        
+        Status is the status byte for M2 decoder. It tracks counter
+        underflow, direction, overflow and if the encoder is
+        operational. The byte value represents:
+        
+        Bit0 - Counter Underflow (1= Underflow Occurred, Clear After Reading)
+        Bit1 - Direction (0 = Forward, 1 = Backwards)
+        Bit2 - Counter Overflow (1= Underflow Occurred, Clear After Reading)
+        Bit3 - Reserved
+        Bit4 - Reserved
+        Bit5 - Reserved
+        Bit6 - Reserved
+        Bit7 - Reserved
         
         Uses:
         17 - Read Quadrature Encoder Register M2
         """
-        raise NotImplementedError()
+        self._send_command(17)
+        enc = self._read_slong()
+        status = self._read_byte()
+        crc = checksum & 0x7F
+        if crc == self._read_byte()
+            return (enc,status)
+        else:
+            raise ValueError("Checksum mismatch.")
 
     @property
     def m1_counter_speed(self):
@@ -553,7 +693,14 @@ class Roboclaw(object):
         Uses:
         18 - Read Speed M1
         """
-        raise NotImplementedError()
+        self._send_command(18)
+        enc = self._read_slong()
+        status = self._read_byte()
+        crc = checksum & 0x7F
+        if crc == self._read_byte():
+            return (enc, direction)
+        else:
+            raise ValueError("Checksum mismatch.")
 
     @property
     def m2_counter_speed(self):
@@ -565,7 +712,14 @@ class Roboclaw(object):
         Uses:
         19 - Read Speed M2
         """
-        raise NotImplementedError()
+        self._send_command(19)
+        enc = self._read_slong()
+        status = self._read_byte()
+        crc = checksum & 0x7F
+        if crc == self._read_byte():
+            return (enc, direction)
+        else:
+            raise ValueError("Checksum mismatch.")
     
     def reset_encoders(self):
         """
@@ -573,7 +727,8 @@ class Roboclaw(object):
 
         Will reset both quadrature decoder counters to zero.
         """
-        raise NotImplementedError()
+        self._send_command(20)
+        self._write_checksum()
 
     ####################################### 
     # Advanced Motor Control
@@ -1243,6 +1398,10 @@ class Roboclaw(object):
             self._checksum += (val >> 24) & 0xFF
             return self._write(struct.pack('>l', val))
 
+    def _write_checksum():
+        with self._device_lock:
+            return self._write_byte(self._checksum & 0x7F);
+        
 def M1Forward(val):
     sendcommand(128, 0)
     writebyte(val)
