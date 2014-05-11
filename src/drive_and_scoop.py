@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+"""
+Simple script that performs the actions required for the May
+qualification.
+
+1) Drive forward ~5m.
+2) Pick up an object.
+3) Store object.
+4) Drive back to starting location.
+"""
+
 import roboclaw
 import test_setup
 import time
