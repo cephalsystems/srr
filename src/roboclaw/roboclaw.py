@@ -46,7 +46,7 @@ class Roboclaw(object):
     # with packet mode.
     #######################################
 
-    def drive_forward_m1(self, value):
+    def m1_forward(self, value):
         """
         0 - Drive Forward M1 
 
@@ -54,9 +54,11 @@ class Roboclaw(object):
         127 = full speed forward, 64 = about half speed forward and 0
         = full stop.
         """
-        raise NotImplementedError()
+        self._send_command(0)
+        self._write_byte(value)
+        self._write_byte(checksum & 0x7F);
 
-    def drive_backward_m1(self, value):
+    def m1_backward(self, value):
         """
         1 - Drive Backwards M1 
 
@@ -64,7 +66,9 @@ class Roboclaw(object):
         of 127 full speed backwards, 64 = about half speed backward
         and 0 = full stop.
         """
-        raise NotImplementedError()
+        self._send_command(1)
+        self._write_byte(value)
+        self._write_byte(checksum & 0x7F);
 
     def set_main_voltage_minimum(self, voltage):
         """
@@ -77,7 +81,13 @@ class Roboclaw(object):
         sets the minimum value allowed which is 6V. The valid data range
         is 6.0 - 30.0 (volts).
         """
-        raise NotImplementedError()
+        # The formula for calculating the voltage is:
+        # (Desired Volts - 6) x 5 = Value
+        val = (voltage - 6) * 5
+        
+        self._send_command(2)
+        self._write_byte(value)
+        self._write_byte(checksum & 0x7F);
 
     def set_main_voltage_maximum(self, voltage):
         """
@@ -92,9 +102,15 @@ class Roboclaw(object):
         exceeding it will go into hard breaking mode until the voltage
         drops below the maximum value set.
         """
-        raise NotImplementedError()
-    
-    def drive_forward_m2(self, value):
+        # The formula for calculating the voltage is:
+        # Desired Volts x 5.12 = Value
+        val = voltage * 5.12
+        
+        self._send_command(3)
+        self._write_byte(value)
+        self._write_byte(checksum & 0x7F);
+        
+    def m2_forward(self, value):
         """
         4 - Drive Forward M2
 
@@ -102,9 +118,11 @@ class Roboclaw(object):
         127 full speed forward, 64 = about half speed forward and 0 =
         full stop.
         """
-        raise NotImplementedError()
+        self._send_command(4)
+        self._write_byte(value)
+        self._write_byte(checksum & 0x7F);
 
-    def drive_backward_m2(self, value):
+    def m2_backward(self, value):
         """
         5 - Drive Backwards M2
         
@@ -112,9 +130,11 @@ class Roboclaw(object):
         of 127 full speed backwards, 64 = about half speed backward
         and 0 = full stop.
         """
-        raise NotImplementedError()
+        self._send_command(5)
+        self._write_byte(value)
+        self._write_byte(checksum & 0x7F);
 
-    def drive_m1(self, value):
+    def m1_drive(self, value):
         """
         6 - Drive M1 (7 Bit)
 
@@ -122,9 +142,11 @@ class Roboclaw(object):
         127. A value of 0 = full speed reverse, 64 = qstop and 127 =
         full speed forward.
         """
-        raise NotImplementedError()
+        self._send_command(6)
+        self._write_byte(value)
+        self._write_byte(checksum & 0x7F);
     
-    def drive_m2(self, value):
+    def m2_drive(self, value):
         """
         7 - Drive M2 (7 Bit)
 
@@ -132,7 +154,9 @@ class Roboclaw(object):
         127. A value of 0 = full speed reverse, 64 = stop and 127 =
         full speed forward.
         """
-        raise NotImplementedError()
+        self._send_command(7)
+        self._write_byte(value)
+        self._write_byte(checksum & 0x7F);                           
 
     #######################################
     # Commands 8 - 13 Mix Mode Commands
@@ -145,25 +169,29 @@ class Roboclaw(object):
     # turn or drive data.
     #######################################
     
-    def drive_forward(self, value):
+    def mixed_forward(self, value):
         """
         8 - Drive Forward
         
         Drive forward in mix mode. Valid data range is 0 - 127. A
         value of 0 = full stop and 127 = full forward.
         """
-        raise NotImplementedError()
+        self._send_command(8)
+        self._write_byte(value)
+        self._write_byte(checksum & 0x7F);
 
-    def drive_backwards(self, value):
+    def mixed_backwards(self, value):
         """
         9 - Drive Backwards
 
         Drive backwards in mix mode. Valid data range is 0 - 127. A
         value of 0 = full stop and 127 = full reverse.
         """
-        raise NotImplementedError()
+        self._send_command(9)
+        self._write_byte(value)
+        self._write_byte(checksum & 0x7F);
 
-    def turn_right(self, value):
+    def mixed_right(self, value):
         """
         10 - Turn right
 
@@ -171,34 +199,44 @@ class Roboclaw(object):
         of 0 = stop turn and 127 = full speed turn. (Note that this
         assumes left motor is M1 and right is M2.)
         """
-        raise NotImplementedError()
+        self._send_command(10)
+        self._write_byte(value)
+        self._write_byte(checksum & 0x7F);
 
-    def turn_left(self, value):
+    def mixed_left(self, value):
         """
         11 - Turn left
 
         Turn left in mix mode. Valid data range is 0 - 127. A value of
-        0 = stop turn and 127 = full speed turn.
+        0 = stop turn and 127 = full speed turn. (Note that this
+        assumes left motor is M1 and right is M2.)
         """
-        raise NotImplementedError()
+        self._send_command(11)
+        self._write_byte(value)
+        self._write_byte(checksum & 0x7F);
 
-    def drive_forward_backward(self, value):
+    def mixed_drive(self, value):
         """
         12 - Drive Forward or Backward (7 Bit)
 
         Drive forward or backwards. Valid data range is 0 - 127. A
         value of 0 = full backward, 64 = stop and 127 = full forward.
         """
-        raise NotImplementedError()
+        self._send_command(12)
+        self._write_byte(value)
+        self._write_byte(checksum & 0x7F);
 
-    def turn_left_right(self, value):
+    def mixed_turn(self, value):
         """
         13 - Turn Left or Right (7 Bit)
         
         Turn left or right. Valid data range is 0 - 127. A value of 0
-        = full left, 0 = stop turn and 127 = full right.
+        = full left, 0 = stop turn and 127 = full right. (Note that this
+        assumes left motor is M1 and right is M2.)
         """
-        raise NotImplementedError()
+        self._send_command(13)
+        self._write_byte(value)
+        self._write_byte(checksum & 0x7F);
 
     #######################################                                           
     # Version, Status, and Settings Commands
