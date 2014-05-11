@@ -11,7 +11,7 @@ class Roboclaw(object):
     def __init__(self, port=None, address=0x80):
         # Create a lock for synchronizing changes to the actual
         # connection to the device.
-        self._device_lock = threading.RLock()
+        self._device_lock = threading.Lock()
 
         # Initialize the connection to the device (as initially
         # disconnected).
