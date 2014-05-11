@@ -66,24 +66,32 @@ class Roboclaw(object):
         """
         raise NotImplementedError()
 
-    @property
-    def main_voltage_minimum(self):
-        # TODO: docstring
+    def set_main_voltage_minimum(self, voltage):
+        """
+        2 - Set Minimum Main Voltage
+
+        Sets main battery (B- / B+) minimum voltage level. If the battery
+        voltages drops below the set voltage level RoboClaw will shut
+        down. The value is cleared at start up and must set after each
+        power up. The voltage is set in .2 volt increments. A value of 0
+        sets the minimum value allowed which is 6V. The valid data range
+        is 6.0 - 30.0 (volts).
+        """
         raise NotImplementedError()
 
-    @port.setter
-    def main_voltage_minimum(self, value):
-        # TODO: docstring
-        raise NotImplementedError()
+    def set_main_voltage_maximum(self, voltage):
+        """
+        3 - Set Maximum Main Voltage
 
-    @property
-    def main_voltage_maximum(self):
-        # TODO: docstring
-        raise NotImplementedError()
-
-    @port.setter
-    def main_voltage_maximum(self, value):
-        # TODO: docstring
+        Sets main battery (B- / B+) maximum voltage level. The valid data
+        range is 0 - 30 (volts). If you are using a battery of any type 
+        you can ignore this setting. During regenerative breaking a back
+        voltage is applied to charge the battery. When using an ATX type
+        power supply if it senses anything over 16V it will shut
+        down. By setting the maximum voltage level, RoboClaw before
+        exceeding it will go into hard breaking mode until the voltage
+        drops below the maximum value set.
+        """
         raise NotImplementedError()
     
     def drive_forward_m2(self, value):
@@ -230,9 +238,8 @@ class Roboclaw(object):
         25 - Read Logic Battery Voltage Level
         """
         raise NotImplementedError()
-
-    @logic_voltage_minimum.setter
-    def logic_voltage_minimum(self, value):
+    
+    def set_logic_voltage_minimum(self, value):
         """
         26 - Set Minimum Logic Voltage Level
         
@@ -243,8 +250,7 @@ class Roboclaw(object):
         """
         raise NotImplementedError()
 
-    @logic_voltage_maximum.setter
-    def logic_voltage_maximum(self, value):
+    def set_logic_voltage_maximum(self, value):
         """
         27 - Set Maximum Logic Voltage Level
         
@@ -266,7 +272,7 @@ class Roboclaw(object):
         raise NotImplementedError()
 
     @property
-    def m1_velocity_pidq(self):
+    def m1_velocity_pid(self):
         """
         The velocity PID and QPPS settings for M1.
 
@@ -292,7 +298,7 @@ class Roboclaw(object):
         raise NotImplementedError()
 
     @property
-    def m2_velocity_pidq(self):
+    def m2_velocity_pid(self):
         """
         The velocity PID and QPPS settings for M2.
 
@@ -314,24 +320,6 @@ class Roboclaw(object):
         Uses:
         56 - Read Motor 2 Velocity P, I, D Constants
         29 - Set Velocity PID Constants for M2.
-        """
-        raise NotImplementedError()
-
-    @main_voltage_range.setter
-    def main_voltage_range(self, value):
-        """
-        57 - Set Main Battery Voltages
-
-        Set the Main Battery Voltages cutoffs, Min and Max.
-        """
-        raise NotImplementedError()
-
-    @logic_voltage_range.setter
-    def logic_voltage_range(self, value):
-        """
-        58 - Set Logic Battery Voltages
-
-        Set the Logic Battery Voltages cutoffs, Min and Max.
         """
         raise NotImplementedError()
 
@@ -357,6 +345,24 @@ class Roboclaw(object):
         """
         raise NotImplementedError()
 
+    @main_voltage_range.setter
+    def main_voltage_range(self, value):
+        """
+        57 - Set Main Battery Voltages
+
+        Set the Main Battery Voltages cutoffs, Min and Max.
+        """
+        raise NotImplementedError()
+
+    @logic_voltage_range.setter
+    def logic_voltage_range(self, value):
+        """
+        58 - Set Logic Battery Voltages
+
+        Set the Logic Battery Voltages cutoffs, Min and Max.
+        """
+        raise NotImplementedError()
+    
     @property
     def m1_position_pid(self):
         """
