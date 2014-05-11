@@ -4,11 +4,14 @@ import time
 import threading
 
 class Roboclaw(object):
+    """
+    Interface for controlling Orion Roboclaw motor controllers.
+    """
     
     def __init__(self, port=None, address=0x80):
         # Create a lock for synchronizing changes to the actual
         # connection to the device.
-        self._device_lock = threading.Lock()
+        self._device_lock = threading.RLock()
 
         # Initialize the connection to the device (as initially
         # disconnected).
@@ -26,6 +29,7 @@ class Roboclaw(object):
     @port.setter
     def port(self, value):
         with self._device_lock:
+            self._device.close()
             self._device.port = None
             self._port = value
 
@@ -54,9 +58,10 @@ class Roboclaw(object):
         127 = full speed forward, 64 = about half speed forward and 0
         = full stop.
         """
-        self._send_command(0)
-        self._write_byte(value)
-        self._write_checksum()
+        with self._device_lock:
+            self._send_command(0)
+            self._write_byte(value)
+            self._write_checksum()
 
     def m1_backward(self, value):
         """
@@ -66,9 +71,10 @@ class Roboclaw(object):
         of 127 full speed backwards, 64 = about half speed backward
         and 0 = full stop.
         """
-        self._send_command(1)
-        self._write_byte(value)
-        self._write_checksum()
+        with self._device_lock:
+            self._send_command(1)
+            self._write_byte(value)
+            self._write_checksum()
 
     def set_main_voltage_minimum(self, voltage):
         """
@@ -84,10 +90,11 @@ class Roboclaw(object):
         # The formula for calculating the voltage is:
         # (Desired Volts - 6) x 5 = Value
         val = (voltage - 6) * 5
-        
-        self._send_command(2)
-        self._write_byte(value)
-        self._write_checksum()
+
+        with self._device_lock:
+            self._send_command(2)
+            self._write_byte(value)
+            self._write_checksum()
 
     def set_main_voltage_maximum(self, voltage):
         """
@@ -105,10 +112,11 @@ class Roboclaw(object):
         # The formula for calculating the voltage is:
         # Desired Volts x 5.12 = Value
         val = voltage * 5.12
-        
-        self._send_command(3)
-        self._write_byte(value)
-        self._write_checksum()
+
+        with self._device_lock:
+            self._send_command(3)
+            self._write_byte(value)
+            self._write_checksum()
         
     def m2_forward(self, value):
         """
@@ -118,9 +126,10 @@ class Roboclaw(object):
         127 full speed forward, 64 = about half speed forward and 0 =
         full stop.
         """
-        self._send_command(4)
-        self._write_byte(value)
-        self._write_checksum()
+        with self._device_lock:
+            self._send_command(4)
+            self._write_byte(value)
+            self._write_checksum()
 
     def m2_backward(self, value):
         """
@@ -130,9 +139,10 @@ class Roboclaw(object):
         of 127 full speed backwards, 64 = about half speed backward
         and 0 = full stop.
         """
-        self._send_command(5)
-        self._write_byte(value)
-        self._write_checksum()
+        with self._device_lock:
+            self._send_command(5)
+            self._write_byte(value)
+            self._write_checksum()
 
     def m1_drive(self, value):
         """
@@ -142,9 +152,10 @@ class Roboclaw(object):
         127. A value of 0 = full speed reverse, 64 = qstop and 127 =
         full speed forward.
         """
-        self._send_command(6)
-        self._write_byte(value)
-        self._write_checksum()
+        with self._device_lock:
+            self._send_command(6)
+            self._write_byte(value)
+            self._write_checksum()
     
     def m2_drive(self, value):
         """
@@ -154,9 +165,10 @@ class Roboclaw(object):
         127. A value of 0 = full speed reverse, 64 = stop and 127 =
         full speed forward.
         """
-        self._send_command(7)
-        self._write_byte(value)
-        self._write_checksum()
+        with self._device_lock:
+            self._send_command(7)
+            self._write_byte(value)
+            self._write_checksum()
 
     #######################################
     # Commands 8 - 13 Mix Mode Commands
@@ -176,9 +188,10 @@ class Roboclaw(object):
         Drive forward in mix mode. Valid data range is 0 - 127. A
         value of 0 = full stop and 127 = full forward.
         """
-        self._send_command(8)
-        self._write_byte(value)
-        self._write_checksum()
+        with self._device_lock:
+            self._send_command(8)
+            self._write_byte(value)
+            self._write_checksum()
 
     def mixed_backwards(self, value):
         """
@@ -187,9 +200,10 @@ class Roboclaw(object):
         Drive backwards in mix mode. Valid data range is 0 - 127. A
         value of 0 = full stop and 127 = full reverse.
         """
-        self._send_command(9)
-        self._write_byte(value)
-        self._write_checksum()
+        with self._device_lock:
+            self._send_command(9)
+            self._write_byte(value)
+            self._write_checksum()
 
     def mixed_right(self, value):
         """
@@ -199,9 +213,10 @@ class Roboclaw(object):
         of 0 = stop turn and 127 = full speed turn. (Note that this
         assumes left motor is M1 and right is M2.)
         """
-        self._send_command(10)
-        self._write_byte(value)
-        self._write_checksum()
+        with self._device_lock:
+            self._send_command(10)
+            self._write_byte(value)
+            self._write_checksum()
 
     def mixed_left(self, value):
         """
@@ -211,9 +226,10 @@ class Roboclaw(object):
         0 = stop turn and 127 = full speed turn. (Note that this
         assumes left motor is M1 and right is M2.)
         """
-        self._send_command(11)
-        self._write_byte(value)
-        self._write_checksum()
+        with self._device_lock:
+            self._send_command(11)
+            self._write_byte(value)
+            self._write_checksum()
 
     def mixed_drive(self, value):
         """
@@ -222,9 +238,10 @@ class Roboclaw(object):
         Drive forward or backwards. Valid data range is 0 - 127. A
         value of 0 = full backward, 64 = stop and 127 = full forward.
         """
-        self._send_command(12)
-        self._write_byte(value)
-        self._write_checksum()
+        with self._device_lock:
+            self._send_command(12)
+            self._write_byte(value)
+            self._write_checksum()
 
     def mixed_turn(self, value):
         """
@@ -234,9 +251,10 @@ class Roboclaw(object):
         = full left, 0 = stop turn and 127 = full right. (Note that this
         assumes left motor is M1 and right is M2.)
         """
-        self._send_command(13)
-        self._write_byte(value)
-        self._write_checksum()
+        with self._device_lock:
+            self._send_command(13)
+            self._write_byte(value)
+            self._write_checksum()
 
     #######################################                                           
     # Version, Status, and Settings Commands
@@ -255,8 +273,9 @@ class Roboclaw(object):
         Uses:
         21 - Read Firmware Version
         """
-        self._send_command(21)
-        return self._read(32)
+        with self._device_lock:
+            self._send_command(21)
+            return self._read(32)
 
     @property
     def main_voltage(self):
@@ -266,13 +285,14 @@ class Roboclaw(object):
         Uses:
         24 - Read Main Battery Voltage Level
         """
-        self._send_command(24)
-        val = self._read_word() * 0.1
-        crc = checksum & 0x7F
-        if crc == self._read_byte():
-            return val
-        else:
-            raise ValueError("Checksum mismatch.")
+        with self._device_lock:
+            self._send_command(24)
+            val = self._read_word() * 0.1
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return val
+            else:
+                raise ValueError("Checksum mismatch.")
 
     @property
     def logic_voltage(self):
@@ -282,13 +302,14 @@ class Roboclaw(object):
         Uses:
         25 - Read Logic Battery Voltage Level
         """
-        self._send_command(25)
-        val = self._read_word() * 0.1
-        crc = checksum & 0x7F
-        if crc == self._read_byte():
-            return val
-        else:
-            raise ValueError("Checksum mismatch.")
+        with self._device_lock:
+            self._send_command(25)
+            val = self._read_word() * 0.1
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return val
+            else:
+                raise ValueError("Checksum mismatch.")
     
     def set_logic_voltage_minimum(self, value):
         """
@@ -320,14 +341,15 @@ class Roboclaw(object):
         Uses:
         49 - Read Motor Currents
         """
-        self._send_command(49);
-        motor1 = self._read_word() * 0.010
-        motor2 = self._read_word() * 0.010
-        crc = checksum & 0x7F
-        if crc == self._read_byte():
-            return (motor1, motor2)
-        else:
-            raise ValueError("Checksum mismatch.")
+        with self._device_lock:
+            self._send_command(49);
+            motor1 = self._read_word() * 0.010
+            motor2 = self._read_word() * 0.010
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return (motor1, motor2)
+            else:
+                raise ValueError("Checksum mismatch.")
 
     @property
     def m1_velocity_pid(self):
@@ -353,16 +375,17 @@ class Roboclaw(object):
         55 - Read Motor 1 Velocity P, I, D Constants
         28 - Set Velocity PID Constants for M1
         """
-        self._send_command(55)
-        p = self._read_long()
-        i = self._read_long()
-        d = self._read_long()
-        qpps = self._read_long()
-        crc = checksum & 0x7F
-        if crc == self._read_byte():
-            return (p,i,d,qpps)
-        else:
-            raise ValueError("Checksum mismatch.")
+        with self._device_lock:
+            self._send_command(55)
+            p = self._read_long()
+            i = self._read_long()
+            d = self._read_long()
+            qpps = self._read_long()
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return (p,i,d,qpps)
+            else:
+                raise ValueError("Checksum mismatch.")
 
     @property
     def m2_velocity_pid(self):
@@ -388,16 +411,17 @@ class Roboclaw(object):
         56 - Read Motor 2 Velocity P, I, D Constants
         29 - Set Velocity PID Constants for M2.
         """
-        self._send_command(56)
-        p = self._read_long()
-        i = self._read_long()
-        d = self._read_long()
-        qpps = self._read_long()
-        crc = checksum & 0x7F
-        if crc == self._read_byte():
-            return (p,i,d,qpps)
-        else:
-            raise ValueError("Checksum mismatch.")
+        with self._device_lock:
+            self._send_command(56)
+            p = self._read_long()
+            i = self._read_long()
+            d = self._read_long()
+            qpps = self._read_long()
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return (p,i,d,qpps)
+            else:
+                raise ValueError("Checksum mismatch.")
 
     @property
     def main_voltage_range(self):
@@ -409,14 +433,15 @@ class Roboclaw(object):
         57 - Set Main Battery Voltages
         """
         # TODO: What are the units here?
-        self._send_command(59)
-        min = self._read_word()
-        max = self._read_word()
-        crc = checksum & 0x7F
-        if crc == self._read_byte():
-            return (min, max)
-        else:
-            raise ValueError("Checksum mismatch.")
+        with self._device_lock:
+            self._send_command(59)
+            min = self._read_word()
+            max = self._read_word()
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return (min, max)
+            else:
+                raise ValueError("Checksum mismatch.")
 
     @property
     def logic_voltage_range(self):
@@ -428,14 +453,15 @@ class Roboclaw(object):
         58 - Set Logic Battery Voltages
         """
         # TODO: What are the units here?
-        self._send_command(60)
-        min = self._read_word()
-        max = self._read_word()
-        crc = checksum & 0x7F
-        if crc == self._read_byte():
-            return (min, max)
-        else:
-            raise ValueError("Checksum mismatch.")
+        with self._device_lock:
+            self._send_command(60)
+            min = self._read_word()
+            max = self._read_word()
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return (min, max)
+            else:
+                raise ValueError("Checksum mismatch.")
 
     @main_voltage_range.setter
     def main_voltage_range(self, value):
@@ -465,19 +491,20 @@ class Roboclaw(object):
         Uses:
         63 - Read Motor 1 Position P, I, D Constants
         """
-        self._send_command(63)
-        p = self._read_long()
-        i = self._read_long()
-        d = self._read_long()
-        imax = self._read_long()
-        deadzone = self._read_long()
-        min = self._read_long()
-        max = self._read_long()
-        crc = checksum & 0x7F
-        if crc == self._read_byte():
-            return (p,i,d,imax,deadzone,min,max)
-        else:
-            raise ValueError("Checksum mismatch.")
+        with self._device_lock:
+            self._send_command(63)
+            p = self._read_long()
+            i = self._read_long()
+            d = self._read_long()
+            imax = self._read_long()
+            deadzone = self._read_long()
+            min = self._read_long()
+            max = self._read_long()
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return (p,i,d,imax,deadzone,min,max)
+            else:
+                raise ValueError("Checksum mismatch.")
 
     @property
     def m2_position_pid(self):
@@ -487,19 +514,20 @@ class Roboclaw(object):
         Uses:
         64 - Read Motor 2 Position P, I, D Constants
         """
-        self._send_command(64)
-        p = self._read_long()
-        i = self._read_long()
-        d = self._read_long()
-        imax = self._read_long()
-        deadzone = self._read_long()
-        min = self._read_long()
-        max = self._read_long()
-        crc = checksum & 0x7F
-        if crc == self._read_byte():
-            return (p,i,d,imax,deadzone,min,max)
-        else:
-            raise ValueError("Checksum mismatch.")
+        with self._device_lock:
+            self._send_command(64)
+            p = self._read_long()
+            i = self._read_long()
+            d = self._read_long()
+            imax = self._read_long()
+            deadzone = self._read_long()
+            min = self._read_long()
+            max = self._read_long()
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return (p,i,d,imax,deadzone,min,max)
+            else:
+                raise ValueError("Checksum mismatch.")
         
     @property
     def temperature(self):
@@ -509,13 +537,14 @@ class Roboclaw(object):
         Uses:
         82 - Read Temperature
         """
-        self._send_command(82);
-        val = self._read_word() * 0.1
-        crc = checksum & 0x7F
-        if crc == self._read_byte():
-            return val
-        else:
-            raise ValueError("Checksum mismatch.")
+        with self._device_lock:
+            self._send_command(82);
+            val = self._read_word() * 0.1
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return val
+            else:
+                raise ValueError("Checksum mismatch.")
 
     @property
     def error_status(self):
@@ -534,13 +563,14 @@ class Roboclaw(object):
         Logic Battery High 0x40
         Logic Battery Low  0x80
         """
-        self._send_command(90);
-        val = self._read_byte()
-        crc = checksum & 0x7F
-        if crc == self._read_byte():
-            return val
-        else:
-            raise ValueError("Checksum mismatch.")
+        with self._device_lock:
+            self._send_command(90);
+            val = self._read_byte()
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return val
+            else:
+                raise ValueError("Checksum mismatch.")
 
     @property
     def m1_encoder_mode(self):
@@ -639,14 +669,15 @@ class Roboclaw(object):
         Uses:
         16 - Read Quadrature Encoder Register M1
         """
-        self._send_command(16)
-        enc = self._read_slong()
-        status = self._read_byte()
-        crc = checksum & 0x7F
-        if crc == self._read_byte():
-            return (enc, status)
-        else:
-            raise ValueError("Checksum mismatch.")
+        with self._device_lock:
+            self._send_command(16)
+            enc = self._read_slong()
+            status = self._read_byte()
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return (enc, status)
+            else:
+                raise ValueError("Checksum mismatch.")
 
     @property
     def m2_encoder(self):
@@ -674,14 +705,15 @@ class Roboclaw(object):
         Uses:
         17 - Read Quadrature Encoder Register M2
         """
-        self._send_command(17)
-        enc = self._read_slong()
-        status = self._read_byte()
-        crc = checksum & 0x7F
-        if crc == self._read_byte():
-            return (enc,status)
-        else:
-            raise ValueError("Checksum mismatch.")
+        with self._device_lock:
+            self._send_command(17)
+            enc = self._read_slong()
+            status = self._read_byte()
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return (enc,status)
+            else:
+                raise ValueError("Checksum mismatch.")
 
     @property
     def m1_counter_speed(self):
@@ -693,14 +725,15 @@ class Roboclaw(object):
         Uses:
         18 - Read Speed M1
         """
-        self._send_command(18)
-        enc = self._read_slong()
-        status = self._read_byte()
-        crc = checksum & 0x7F
-        if crc == self._read_byte():
-            return (enc, direction)
-        else:
-            raise ValueError("Checksum mismatch.")
+        with self._device_lock:
+            self._send_command(18)
+            enc = self._read_slong()
+            status = self._read_byte()
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return (enc, direction)
+            else:
+                raise ValueError("Checksum mismatch.")
 
     @property
     def m2_counter_speed(self):
@@ -712,14 +745,15 @@ class Roboclaw(object):
         Uses:
         19 - Read Speed M2
         """
-        self._send_command(19)
-        enc = self._read_slong()
-        status = self._read_byte()
-        crc = checksum & 0x7F
-        if crc == self._read_byte():
-            return (enc, direction)
-        else:
-            raise ValueError("Checksum mismatch.")
+        with self._device_lock:
+            self._send_command(19)
+            enc = self._read_slong()
+            status = self._read_byte()
+            crc = self._checksum & 0x7F
+            if crc == self._read_byte():
+                return (enc, direction)
+            else:
+                raise ValueError("Checksum mismatch.")
     
     def reset_encoders(self):
         """
@@ -727,8 +761,9 @@ class Roboclaw(object):
 
         Will reset both quadrature decoder counters to zero.
         """
-        self._send_command(20)
-        self._write_checksum()
+        with self._device_lock:
+            self._send_command(20)
+            self._write_checksum()
 
     ####################################### 
     # Advanced Motor Control
@@ -1298,662 +1333,103 @@ class Roboclaw(object):
         raise NotImplementedError()
 
     def _write(self, value):
-        with self._device_lock:
+        try:
             if self._device.port is None:
                 self._device.port = self._port
-            self._device.write(value)
+                self._device.open()
+            return self._device.write(value)
+        except serial.SerialException:
+            self._device.close()
+            self._device.port = None
+            return 0
 
     def _read(self, length):
-        with self._device_lock:
+        try:
             if self._device.port is None:
                 self._device.port = self._port
-            self._device.read(length)
+                self._device.open()
+            return self._device.read(length)
+        except serial.SerialException:
+            self._device.close()
+            self._device.port = None
+            return b''
 
     def _send_command(self, command):
-        with self._device_lock:
-            self._checksum = self._address
-            self._write(chr(self._address))
-            self._checksum += command
-            self._write(chr(command))
-
+        self._checksum = self._address
+        self._write(chr(self._address))
+        self._checksum += command
+        self._write(chr(command))
+        
     def _read_byte(self):
-        with self._device_lock:
-            val = struct.unpack('>B', self._read(1))
-            self._checksum += val[0]
-            return val[0]
+        val = struct.unpack('>B', self._read(1))
+        self._checksum += val[0]
+        return val[0]
         
     def _read_sbyte(self):
-        with self._device_lock:
-            val = struct.unpack('>b', self._read(1))
-            self._checksum += val[0]
-            return val[0]
+        val = struct.unpack('>b', self._read(1))
+        self._checksum += val[0]
+        return val[0]
 
     def _read_word(self):
-        with self._device_lock:
-            val = struct.unpack('>H', self._read(2))
-            self._checksum += (val[0] & 0xFF)
-            self._checksum += (val[0] >> 8) & 0xFF
-            return val[0]
+        val = struct.unpack('>H', self._read(2))
+        self._checksum += (val[0] & 0xFF)
+        self._checksum += (val[0] >> 8) & 0xFF
+        return val[0]
 
     def _read_sword(self):
-        with self._device_lock:
-            val = struct.unpack('>h', self._read(2))
-            self._checksum += val[0]
-            self._checksum += (val[0] >> 8) & 0xFF
-            return val[0]
+        val = struct.unpack('>h', self._read(2))
+        self._checksum += val[0]
+        self._checksum += (val[0] >> 8) & 0xFF
+        return val[0]
 
     def _read_long(self):
-        with self._device_lock:
-            val = struct.unpack('>L', self._read(4))
-            self._checksum += val[0]
-            self._checksum += (val[0] >> 8) & 0xFF
-            self._checksum += (val[0] >> 16) & 0xFF
-            self._checksum += (val[0] >> 24) & 0xFF
-            return val[0]
+        val = struct.unpack('>L', self._read(4))
+        self._checksum += val[0]
+        self._checksum += (val[0] >> 8) & 0xFF
+        self._checksum += (val[0] >> 16) & 0xFF
+        self._checksum += (val[0] >> 24) & 0xFF
+        return val[0]
 
     def _read_slong(self):
-        with self._device_lock:
-            val = struct.unpack('>l', self._read(4))
-            self._checksum += val[0]
-            self._checksum += (val[0] >> 8) & 0xFF
-            self._checksum += (val[0] >> 16) & 0xFF
-            self._checksum += (val[0] >> 24) & 0xFF
-            return val[0]
+        val = struct.unpack('>l', self._read(4))
+        self._checksum += val[0]
+        self._checksum += (val[0] >> 8) & 0xFF
+        self._checksum += (val[0] >> 16) & 0xFF
+        self._checksum += (val[0] >> 24) & 0xFF
+        return val[0]
         
     def _write_byte(self, val):
-        with self._device_lock:
-            self._checksum += val
-            return self._write(struct.pack('>B', val))
+        self._checksum += val
+        return self._write(struct.pack('>B', val))
 
     def _write_sbyte(self, val):
-        with self._device_lock:
-            self._checksum += val
-            return self._write(struct.pack('>b', val))
+        self._checksum += val
+        return self._write(struct.pack('>b', val))
 
     def _write_word(self, val):
-        with self._device_lock:
-            self._checksum += val
-            self._checksum += (val >> 8) & 0xFF
-            return self._write(struct.pack('>H', val))
+        self._checksum += val
+        self._checksum += (val >> 8) & 0xFF
+        return self._write(struct.pack('>H', val))
 
     def _write_sword(self, val):
-        with self._device_lock:
-            self._checksum += val
-            self._checksum += (val >> 8) & 0xFF
-            return self._write(struct.pack('>h', val))
+        self._checksum += val
+        self._checksum += (val >> 8) & 0xFF
+        return self._write(struct.pack('>h', val))
         
     def _write_long(self, val):
-        with self._device_lock:
-            self._checksum += val
-            self._checksum += (val >> 8) & 0xFF
-            self._checksum += (val >> 16) & 0xFF
-            self._checksum += (val >> 24) & 0xFF
-            return self._write(struct.pack('>L', val))
+        self._checksum += val
+        self._checksum += (val >> 8) & 0xFF
+        self._checksum += (val >> 16) & 0xFF
+        self._checksum += (val >> 24) & 0xFF
+        return self._write(struct.pack('>L', val))
 
     def _write_slong(self, val):
-        with self._device_lock:
-            self._checksum += val
-            self._checksum += (val >> 8) & 0xFF
-            self._checksum += (val >> 16) & 0xFF
-            self._checksum += (val >> 24) & 0xFF
-            return self._write(struct.pack('>l', val))
+        self._checksum += val
+        self._checksum += (val >> 8) & 0xFF
+        self._checksum += (val >> 16) & 0xFF
+        self._checksum += (val >> 24) & 0xFF
+        return self._write(struct.pack('>l', val))
 
     def _write_checksum(self):
-        with self._device_lock:
-            return self._write_byte(self._checksum & 0x7F);
+        return self._write_byte(self._checksum & 0x7F);
         
-def M1Forward(val):
-    sendcommand(128, 0)
-    writebyte(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def M1Backward(val):
-    sendcommand(128, 1)
-    writebyte(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetMinMainBattery(val):
-    sendcommand(128, 2)
-    writebyte(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetMaxMainBattery(val):
-    sendcommand(128, 3)
-    writebyte(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def M2Forward(val):
-    sendcommand(128, 4)
-    writebyte(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def M2Backward(val):
-    sendcommand(128, 5)
-    writebyte(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def DriveM1(val):
-    sendcommand(128, 6)
-    writebyte(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def DriveM2(val):
-    sendcommand(128, 7)
-    writebyte(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def ForwardMixed(val):
-    sendcommand(128, 8)
-    writebyte(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def BackwardMixed(val):
-    sendcommand(128, 9)
-    writebyte(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def RightMixed(val):
-    sendcommand(128, 10)
-    writebyte(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def LeftMixed(val):
-    sendcommand(128, 11)
-    writebyte(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def DriveMixed(val):
-    sendcommand(128, 12)
-    writebyte(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def TurnMixed(val):
-    sendcommand(128, 13)
-    writebyte(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def readM1encoder():
-    sendcommand(128, 16)
-    enc = readslong()
-    status = readbyte()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return (enc, status)
-    return (-1, -1)
-
-
-def readM2encoder():
-    sendcommand(128, 17)
-    enc = readslong()
-    status = readbyte()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return (enc, status)
-    return (-1, -1)
-
-
-def readM1speed():
-    sendcommand(128, 18)
-    enc = readslong()
-    status = readbyte()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return (enc, status)
-    return (-1, -1)
-
-
-def readM2speed():
-    sendcommand(128, 19)
-    enc = readslong()
-    status = readbyte()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return (enc, status)
-    return (-1, -1)
-
-
-def ResetEncoderCnts():
-    sendcommand(128, 20)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def readversion():
-    sendcommand(128, 21)
-    return port.read(32)
-
-
-def readmainbattery():
-    sendcommand(128, 24)
-    val = readword()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return val
-    return -1
-
-
-def readlogicbattery():
-    sendcommand(128, 25)
-    val = readword()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return val
-    return -1
-
-
-def SetM1pidq(p, i, d, qpps):
-    sendcommand(128, 28)
-    writelong(d)
-    writelong(p)
-    writelong(i)
-    writelong(qpps)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetM2pidq(p, i, d, qpps):
-    sendcommand(128, 29)
-    writelong(d)
-    writelong(p)
-    writelong(i)
-    writelong(qpps)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def readM1instspeed():
-    sendcommand(128, 30)
-    enc = readslong()
-    status = readbyte()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return (enc, status)
-    return (-1, -1)
-
-
-def readM2instspeed():
-    sendcommand(128, 31)
-    enc = readslong()
-    status = readbyte()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return (enc, status)
-    return (-1, -1)
-
-
-def SetM1Duty(val):
-    sendcommand(128, 32)
-    writesword(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetM2Duty(val):
-    sendcommand(128, 33)
-    writesword(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetMixedDuty(m1, m2):
-    sendcommand(128, 34)
-    writesword(m1)
-    writesword(m2)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetM1Speed(val):
-    sendcommand(128, 35)
-    writeslong(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetM2Speed(val):
-    sendcommand(128, 36)
-    writeslong(val)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetMixedSpeed(m1, m2):
-    sendcommand(128, 37)
-    writeslong(m1)
-    writeslong(m2)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetM1SpeedAccel(accel, speed):
-    sendcommand(128, 38)
-    writelong(accel)
-    writeslong(speed)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetM2SpeedAccel(accel, speed):
-    sendcommand(128, 39)
-    writelong(accel)
-    writeslong(speed)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetMixedSpeedAccel(accel, speed1, speed2):
-    sendcommand(128, 40)
-    writelong(accel)
-    writeslong(speed1)
-    writeslong(speed2)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetM1SpeedDistance(speed, distance, buffer):
-    sendcommand(128, 41)
-    writeslong(speed)
-    writelong(distance)
-    writebyte(buffer)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetM2SpeedDistance(speed, distance, buffer):
-    sendcommand(128, 42)
-    writeslong(speed)
-    writelong(distance)
-    writebyte(buffer)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetMixedSpeedDistance(speed1, distance1, speed2, distance2, buffer):
-    sendcommand(128, 43)
-    writeslong(speed1)
-    writelong(distance1)
-    writeslong(speed2)
-    writelong(distance2)
-    writebyte(buffer)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetM1SpeedAccelDistance(accel, speed, distance, buffer):
-    sendcommand(128, 44)
-    writelong(accel)
-    writeslong(speed)
-    writelong(distance)
-    writebyte(buffer)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetM2SpeedAccelDistance(accel, speed, distance, buffer):
-    sendcommand(128, 45)
-    writelong(accel)
-    writeslong(speed)
-    writelong(distance)
-    writebyte(buffer)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetMixedSpeedAccelDistance(accel, speed1, distance1, speed2, distance2, buffer):
-    sendcommand(128, 46)
-    writelong(accel)
-    writeslong(speed1)
-    writelong(distance1)
-    writeslong(speed2)
-    writelong(distance2)
-    writebyte(buffer)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def readbuffercnts():
-    sendcommand(128, 47)
-    buffer1 = readbyte()
-    buffer2 = readbyte()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return (buffer1, buffer2)
-    return (-1, -1)
-
-
-def readcurrents():
-    sendcommand(128, 49)
-    motor1 = readword()
-    motor2 = readword()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return (motor1, motor2)
-    return (-1, -1)
-
-
-def SetMixedSpeedIAccel(accel1, speed1, accel2, speed2):
-    sendcommand(128, 50)
-    writelong(accel1)
-    writeslong(speed1)
-    writelong(accel2)
-    writeslong(speed2)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetMixedSpeedIAccelDistance(accel1, speed1, distance1, accel2, speed2, distance2, buffer):
-    sendcommand(128, 51)
-    writelong(accel1)
-    writeslong(speed1)
-    writelong(distance1)
-    writelong(accel2)
-    writeslong(speed2)
-    writelong(distance2)
-    writebyte(buffer)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetM1DutyAccel(accel, duty):
-    sendcommand(128, 52)
-    writesword(duty)
-    writeword(accel)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetM2DutyAccel(accel, duty):
-    sendcommand(128, 53)
-    writesword(duty)
-    writeword(accel)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetMixedDutyAccel(accel1, duty1, accel2, duty2):
-    sendcommand(128, 54)
-    writesword(duty1)
-    writeword(accel1)
-    writesword(duty2)
-    writeword(accel2)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def readM1pidq():
-    sendcommand(128, 55)
-    p = readlong()
-    i = readlong()
-    d = readlong()
-    qpps = readlong()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return (p, i, d, qpps)
-    return (-1, -1, -1, -1)
-
-
-def readM2pidq():
-    sendcommand(128, 56)
-    p = readlong()
-    i = readlong()
-    d = readlong()
-    qpps = readlong()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return (p, i, d, qpps)
-    return (-1, -1, -1, -1)
-
-
-def readmainbatterysettings():
-    sendcommand(128, 59)
-    min = readword()
-    max = readword()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return (min, max)
-    return (-1, -1)
-
-
-def readlogicbatterysettings():
-    sendcommand(128, 60)
-    min = readword()
-    max = readword()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return (min, max)
-    return (-1, -1)
-
-
-def SetM1PositionConstants(kp, ki, kd, kimax, deadzone, min, max):
-    sendcommand(128, 61)
-    writelong(kd)
-    writelong(kp)
-    writelong(ki)
-    writelong(kimax)
-    writelong(min)
-    writelong(max)
-    return
-
-
-def SetM2PositionConstants(kp, ki, kd, kimax, deadzone, min, max):
-    sendcommand(128, 62)
-    writelong(kd)
-    writelong(kp)
-    writelong(ki)
-    writelong(kimax)
-    writelong(min)
-    writelong(max)
-    return
-
-
-def readM1PositionConstants():
-    sendcommand(128, 63)
-    p = readlong()
-    i = readlong()
-    d = readlong()
-    imax = readlong()
-    deadzone = readlong()
-    min = readlong()
-    max = readlong()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return (p, i, d, imax, deadzone, min, max)
-    return (-1, -1, -1, -1, -1, -1, -1)
-
-
-def readM2PositionConstants():
-    sendcommand(128, 64)
-    p = readlong()
-    i = readlong()
-    d = readlong()
-    imax = readlong()
-    deadzone = readlong()
-    min = readlong()
-    max = readlong()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return (p, i, d, imax, deadzone, min, max)
-    return (-1, -1, -1, -1, -1, -1, -1)
-
-
-def SetM1SpeedAccelDeccelPosition(accel, speed, deccel, position, buffer):
-    sendcommand(128, 65)
-    writelong(accel)
-    writelong(speed)
-    writelong(deccel)
-    writelong(position)
-    writebyte(buffer)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetM2SpeedAccelDeccelPosition(accel, speed, deccel, position, buffer):
-    sendcommand(128, 66)
-    writelong(accel)
-    writelong(speed)
-    writelong(deccel)
-    writelong(position)
-    writebyte(buffer)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def SetMixedSpeedAccelDeccelPosition(accel1, speed1, deccel1, position1, accel2, speed2, deccel2, position2, buffer):
-    sendcommand(128, 67)
-    writelong(accel1)
-    writelong(speed1)
-    writelong(deccel1)
-    writelong(position1)
-    writelong(accel2)
-    writelong(speed2)
-    writelong(deccel2)
-    writelong(position2)
-    writebyte(buffer)
-    writebyte(checksum & 0x7F)
-    return
-
-
-def readtemperature():
-    sendcommand(128, 82)
-    val = readword()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return val
-    return -1
-
-
-def readerrorstate():
-    sendcommand(128, 90)
-    val = readbyte()
-    crc = checksum & 0x7F
-    if crc == readbyte():
-        return val
-    return -1
