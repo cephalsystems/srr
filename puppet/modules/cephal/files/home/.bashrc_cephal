@@ -1,14 +1,20 @@
 # Set up emacs default alias
 alias emacs='emacs -nw '
 
-# Set up ROS
-if [ -f /opt/ros/hydro/setup.bash ]
+# Set up ROS.
+if [ -f "/opt/ros/hydro/setup.bash" ]
 then
     source /opt/ros/hydro/setup.bash
 fi
 
-# Set up local catkin workspace
-if [ -f /opt/cephal/devel/setup.bash ]
+# Set up local catkin workspace.
+if [ -f "/opt/cephal/src/setup.bash" ]
 then
-    source /opt/cephal/devel/setup.bash
+    source /opt/cephal/src/setup.bash
+fi
+
+# Set up development python path.
+if [ -d "/opt/cephal/src" ]
+then
+    export PYTHON_PATH=${PYTHON_PATH}:/opt/cephal/src
 fi
