@@ -191,7 +191,266 @@ class Roboclaw(object):
         """
         raise NotImplementedError()
 
+    #######################################                                           
+    # Version, Status, and Settings Commands
+    #
+    # The following commands are used to read board status, version
+    # information and set configuration values.
+    ####################################### 
 
+    @property
+    def firmware_version(self):
+        """
+        RoboClaw firmware version. 
+
+        Returns up to 32 bytes and is terminated by a null character.
+
+        Uses:
+        21 - Read Firmware Version
+        """
+        raise NotImplementedError()
+
+    @property
+    def main_voltage(self):
+        """
+        The main battery voltage level connected to B+ and B- terminals (in volts).
+
+        Uses:
+        24 - Read Main Battery Voltage Level
+        """
+        raise NotImplementedError()
+
+    @property
+    def logic_voltage(self):
+        """
+        The logic battery voltage level connected to LB+ and LB- terminals (in volts).
+        
+        Uses:
+        25 - Read Logic Battery Voltage Level
+        """
+        raise NotImplementedError()
+
+    @logic_voltage_minimum.setter
+    def logic_voltage_minimum(self, value):
+        """
+        26 - Set Minimum Logic Voltage Level
+        
+        Sets logic input (LB- / LB+) minimum voltage level. If the
+        battery voltages drops below the set voltage level RoboClaw
+        will shut down. The value is cleared at start up and must set
+        after each power up. The valid data range is 6.0 - 28.0 (volts).
+        """
+        raise NotImplementedError()
+
+    @logic_voltage_maximum.setter
+    def logic_voltage_maximum(self, value):
+        """
+        27 - Set Maximum Logic Voltage Level
+        
+        Sets logic input (LB- / LB+) maximum voltage level. The valid
+        data range is 0.0 - 28.0 (volts). By setting the maximum
+        voltage level RoboClaw will go into shut down and requires a
+        hard reset to recovers.
+        """
+        raise NotImplementedError()
+    
+    @property
+    def motor_currents(self):
+        """
+        The current draw from each motor in amps.
+        
+        Uses:
+        49 - Read Motor Currents
+        """
+        raise NotImplementedError()
+
+    @property
+    def m1_velocity_pidq(self):
+        """
+        The velocity PID and QPPS settings for M1.
+
+        Uses:
+        55 - Read Motor 1 Velocity P, I, D Constants
+        """
+        raise NotImplementedError()
+
+    @property
+    def m2_velocity_pidq(self):
+        """
+        The velocity PID and QPPS settings for M2.
+        
+        Uses:
+        56 - Read Motor 2 Velocity P, I, D Constants
+        """
+        raise NotImplementedError()
+
+    @main_voltage_range.setter
+    def main_voltage_range(self, value):
+        """
+        57 - Set Main Battery Voltages
+
+        Set the Main Battery Voltages cutoffs, Min and Max.
+        """
+        raise NotImplementedError()
+
+    @logic_voltage_range.setter
+    def logic_voltage_range(self, value):
+        """
+        58 - Set Logic Battery Voltages
+
+        Set the Logic Battery Voltages cutoffs, Min and Max.
+        """
+        raise NotImplementedError()
+
+    @property
+    def main_voltage_range(self):
+        """
+        The Main Battery Voltages cutoffs, (min, max) in volts.
+        
+        Uses:
+        59 - Read Main Battery Voltage Settings
+        57 - Set Main Battery Voltages
+        """
+        raise NotImplementedError()
+
+    @property
+    def logic_voltage_range(self):
+        """
+        The Logic Battery Voltages cutoffs, (min, max) in volts.
+        
+        Uses:
+        60 - Read Logic Battery Voltage Settings
+        58 - Set Logic Battery Voltages
+        """
+        raise NotImplementedError()
+
+    @property
+    def m1_position_pid(self):
+        """
+        The position PID settings for M1.
+
+        Uses:
+        63 - Read Motor 1 Position P, I, D Constants
+        """
+        raise NotImplementedError()
+
+    @property
+    def m2_position_pid(self):
+        """
+        The position PID settings for M2.
+        
+        Uses:
+        64 - Read Motor 2 Position P, I, D Constants
+        """
+        raise NotImplementedError()
+        
+    @property
+    def temperature(self):
+        """
+        The board temperature. Value returned is in degrees Celsius.
+
+        Uses:
+        82 - Read Temperature
+        """
+        raise NotImplementedError()
+
+    @property
+    def error_status(self):
+        """
+        The current error status.
+
+        Error Mask
+        ----------
+        Normal             0x00
+        M1 OverCurrent     0x01
+        M2 OverCurrent     0x02
+        E-Stop             0x04
+        Temperature        0x08
+        Main Battery High  0x10
+        Main Battery Low   0x20
+        Logic Battery High 0x40
+        Logic Battery Low  0x80
+        """
+        raise NotImplementedError()
+
+    @property
+    def m1_encoder_mode(self):
+        """
+        The encoder mode for M1.
+
+        Encoder Mode bits
+        -----------------
+        Bit 7    Enable RC/Analog Encoder support
+        Bit 6-1  N/A
+        Bit 0    Quadrature(0)/Absolute(1)
+        
+        Uses:
+        91 - Read Encoder Mode
+        92 - Set Motor 1 Encoder Mode
+        """
+        raise NotImplementedError()
+
+    @property
+    def m2_encoder_mode(self):
+        """
+        The encoder mode for M2.
+
+        Encoder Mode bits
+        -----------------
+        Bit 7    Enable RC/Analog Encoder support
+        Bit 6-1  N/A
+        Bit 0    Quadrature(0)/Absolute(1)
+        
+        Uses:
+        91 - Read Encoder Mode
+        93 - Set Motor 2 Encoder Mode
+        """
+        raise NotImplementedError()
+
+    @m1_encoder_mode.setter
+    def m1_encoder_mode(self, value):
+        """
+        92 - Set Motor 1 Encoder Mode
+        
+        Set the Encoder Mode for motor 1.
+        """
+        raise NotImplementedError()
+
+    @m2_encoder_mode.setter
+    def m2_encoder_mode(self, value):
+        """
+        93 - Set Motor 2 Encoder Mode
+
+        Set the Encoder Mode for motor 1.
+        """
+        raise NotImplementedError()
+
+    def save():
+        """
+        94 - Write Settings to EEPROM
+        
+        Writes all settings to non-volatile memory.
+        """
+        raise NotImplementedError()
+
+    ####################################### 
+    # Quadrature Encoder Commands
+    #
+    # The following commands are used in dealing with the quadrature
+    # decoding counter registers. The quadrature decoder is a simple
+    # counter that counts the incoming pulses, tracks the direction
+    # and speed of each pulse. There are two registers one each for M1
+    # and M2. (Note: A microcontroller with a hardware UART is
+    # recommended for use with packet serial modes).
+    #######################################     
+
+        
+        
+                
+
+
+
+    
 checksum = 0
 
 
