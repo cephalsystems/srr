@@ -16,6 +16,7 @@ class Roboclaw(object):
             self._port = port
             self._dev = None
             self._address = address
+            self._checksum = 0
 
     @property
     def port(self):
@@ -1097,111 +1098,106 @@ class Roboclaw(object):
         # TODO: The parameters for this command in the docs seems wrong...
         raise NotImplementedError()
 
-checksum = 0
+    def _write(value):
+        with self._device_lock:
+            if self._device is None:
+                self._device = ser = serial.Serial(self._port, 38400)
+            self._device.write(value)
 
+    def _read(length):
+        with self._device_lock:
+            if self._device is None:
+                self._device = ser = serial.Serial(self._port, 38400)
+            self._device.read(length)
 
-def sendcommand(address, command):
-    global checksum
-    checksum = address
-    port.write(chr(address))
-    checksum += command
-    port.write(chr(command))
-    return
+    def _send_command(command):
+        with self._device_lock:
+            self._checksum = self._address
+            self._write(chr(self._address))
+            self._checksum += command
+            self._write(chr(command))
 
+    def _read_byte():
+        with self._device_lock:
+            val = struct.unpack('>B', self._read(1))
+            self._checksum += val[0]
+            return val[0]
+        
+    def _read_sbyte():
+        with self._device_lock:
+            val = struct.unpack('>b', self._read(1))
+            self._checksum += val[0]
+            return val[0]
 
-def readbyte():
-    global checksum
-    val = struct.unpack('>B', port.read(1))
-    checksum += val[0]
-    return val[0]
+    def _read_word():
+        with self._device_lock:
+            val = struct.unpack('>H', self._read(2))
+            self._checksum += (val[0] & 0xFF)
+            self._checksum += (val[0] >> 8) & 0xFF
+            return val[0]
 
+    def _read_sword():
+        with self._device_lock:
+            val = struct.unpack('>h', self._read(2))
+            self._checksum += val[0]
+            self._checksum += (val[0] >> 8) & 0xFF
+            return val[0]
 
-def readsbyte():
-    global checksum
-    val = struct.unpack('>b', port.read(1))
-    checksum += val[0]
-    return val[0]
+    def _read_long():
+        with self._device_lock:
+            val = struct.unpack('>L', self._read(4))
+            self._checksum += val[0]
+            self._checksum += (val[0] >> 8) & 0xFF
+            self._checksum += (val[0] >> 16) & 0xFF
+            self._checksum += (val[0] >> 24) & 0xFF
+            return val[0]
 
+    def _read_slong():
+        with self._device_lock:
+            val = struct.unpack('>l', self._read(4))
+            self._checksum += val[0]
+            self._checksum += (val[0] >> 8) & 0xFF
+            self._checksum += (val[0] >> 16) & 0xFF
+            self._checksum += (val[0] >> 24) & 0xFF
+            return val[0]
+        
+    def _write_byte(val):
+        with self._device_lock:
+            self._checksum += val
+            return self._write(struct.pack('>B', val))
 
-def readword():
-    global checksum
-    val = struct.unpack('>H', port.read(2))
-    checksum += (val[0] & 0xFF)
-    checksum += (val[0] >> 8) & 0xFF
-    return val[0]
+    def _write_sbyte(val):
+        with self._device_lock:
+            self._checksum += val
+            return self._write(struct.pack('>b', val))
 
+    def _write_word(val):
+        with self._device_lock:
+            self._checksum += val
+            self._checksum += (val >> 8) & 0xFF
+            return self._write(struct.pack('>H', val))
 
-def readsword():
-    global checksum
-    val = struct.unpack('>h', port.read(2))
-    checksum += val[0]
-    checksum += (val[0] >> 8) & 0xFF
-    return val[0]
+    def _write_sword(val):
+        with self._device_lock:
+            self._checksum += val
+            self._checksum += (val >> 8) & 0xFF
+            return self._write(struct.pack('>h', val))
+        
+    def _write_long(val):
+        with self._device_lock:
+            self._checksum += val
+            self._checksum += (val >> 8) & 0xFF
+            self._checksum += (val >> 16) & 0xFF
+            self._checksum += (val >> 24) & 0xFF
+            return self._write(struct.pack('>L', val))
 
-
-def readlong():
-    global checksum
-    val = struct.unpack('>L', port.read(4))
-    checksum += val[0]
-    checksum += (val[0] >> 8) & 0xFF
-    checksum += (val[0] >> 16) & 0xFF
-    checksum += (val[0] >> 24) & 0xFF
-    return val[0]
-
-
-def readslong():
-    global checksum
-    val = struct.unpack('>l', port.read(4))
-    checksum += val[0]
-    checksum += (val[0] >> 8) & 0xFF
-    checksum += (val[0] >> 16) & 0xFF
-    checksum += (val[0] >> 24) & 0xFF
-    return val[0]
-
-
-def writebyte(val):
-    global checksum
-    checksum += val
-    return port.write(struct.pack('>B', val))
-
-
-def writesbyte(val):
-    global checksum
-    checksum += val
-    return port.write(struct.pack('>b', val))
-
-
-def writeword(val):
-    global checksum
-    checksum += val
-    checksum += (val >> 8) & 0xFF
-    return port.write(struct.pack('>H', val))
-
-
-def writesword(val):
-    global checksum
-    checksum += val
-    checksum += (val >> 8) & 0xFF
-    return port.write(struct.pack('>h', val))
-
-
-def writelong(val):
-    global checksum
-    checksum += val
-    checksum += (val >> 8) & 0xFF
-    checksum += (val >> 16) & 0xFF
-    checksum += (val >> 24) & 0xFF
-    return port.write(struct.pack('>L', val))
-
-
-def writeslong(val):
-    global checksum
-    checksum += val
-    checksum += (val >> 8) & 0xFF
-    checksum += (val >> 16) & 0xFF
-    checksum += (val >> 24) & 0xFF
-    return port.write(struct.pack('>l', val))
-
+    def _write_slong(val):
+        with self._device_lock:
+            self._checksum += val
+            self._checksum += (val >> 8) & 0xFF
+            self._checksum += (val >> 16) & 0xFF
+            self._checksum += (val >> 24) & 0xFF
+            return self._write(struct.pack('>l', val))
 
 def M1Forward(val):
     sendcommand(128, 0)
