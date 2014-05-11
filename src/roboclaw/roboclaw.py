@@ -643,7 +643,7 @@ class Roboclaw(object):
         enc = self._read_slong()
         status = self._read_byte()
         crc = checksum & 0x7F
-        if crc == self._read_byte()
+        if crc == self._read_byte():
             return (enc, status)
         else:
             raise ValueError("Checksum mismatch.")
@@ -678,7 +678,7 @@ class Roboclaw(object):
         enc = self._read_slong()
         status = self._read_byte()
         crc = checksum & 0x7F
-        if crc == self._read_byte()
+        if crc == self._read_byte():
             return (enc,status)
         else:
             raise ValueError("Checksum mismatch.")
