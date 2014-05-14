@@ -4,6 +4,8 @@ import numpy as np
 import sys
 
 # produce a matrix to convert from pixel coordinates to world (m) coordinates
+
+
 def image_to_world(pixels_per_meter, width_m, height_m, cx_m, cy_m, z_m):
     # compute multipliers from pixels->m
     # and destination width,height in pixels
@@ -19,6 +21,7 @@ def image_to_world(pixels_per_meter, width_m, height_m, cx_m, cy_m, z_m):
 
     return np.array(a)
 
+
 def world_to_camera(f_raw, width_px, height_px):
     f = f_raw * width_px / 2.0
     cx = width_px / 2.0
@@ -29,10 +32,12 @@ def world_to_camera(f_raw, width_px, height_px):
          [0.0, 0.0, 1.0]]
     return np.array(a)
 
+
 def proj_mat(f, cx, cy):
     return np.array([[  f, 0.0,  cx],
                      [0.0,   f,  cy],
                      [0.0, 0.0, 1.0]])
+
 
 def rot_x(theta):
     c_t = math.cos(theta)
@@ -43,6 +48,7 @@ def rot_x(theta):
 
 
 class PerspectiveCorrector:
+
     def __init__(self, srcsize, destsize):
         self.srcsize = srcsize
         self.destsize = destsize
@@ -86,7 +92,7 @@ class PerspectiveCorrector:
 
     def apply(self, srcim):
         tf = self.get_transform()
-        #print(tf)
+        # print(tf)
         return cv2.warpPerspective(srcim, tf, (self.destsize, self.destsize))
 
 
