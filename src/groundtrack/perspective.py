@@ -86,7 +86,7 @@ class PerspectiveCorrector:
 
     def apply(self, srcim):
         tf = self.get_transform()
-        print(tf)
+        #print(tf)
         return cv2.warpPerspective(srcim, tf, (self.destsize, self.destsize))
 
 
