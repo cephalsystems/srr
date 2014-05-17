@@ -25,21 +25,29 @@ class cephal::packages {
                     # SRC build dependencies
                     'python-dev',
                     'python-opencv',
+                    # Pip dependencies
+                    'libxml2-dev',
+                    'libxslt1-dev',
                     # ROS packages
-                    #'ros-hydro-desktop-full',
+                    'ros-indigo-desktop',
                     ]
 
   # Required PIP packages.
   $pip_packages = [ # Linting and formatting tools
                     'pep8',
                     'autopep8',
+                    # SRC build dependencies
+                    'pykml',
                     ]
 
   # Install the required pip packages.
   package { $pip_packages:
     ensure   => 'present',
     provider => 'pip',
-    require  => Package['python-pip'],
+    require  => [ Package['python-pip'],
+                  # PyKML dependencies
+                  Package['libxml2-dev'],
+                  Package['libxslt1-dev'] ],
   }
   
   # Require the aptitude puppet module.
@@ -55,7 +63,7 @@ class cephal::packages {
   ->
   apt::source { 'ros':
     location          => 'http://packages.ros.org/ros/ubuntu',
-    release           => 'raring',
+    release           => 'saucy',
     repos             => 'main',
     required_packages => 'debian-keyring debian-archive-keyring',
   }
