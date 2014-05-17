@@ -193,7 +193,7 @@ class Roboclaw(object):
             self._write_byte(value)
             self._write_checksum()
 
-    def mixed_backwards(self, value):
+    def mixed_backward(self, value):
         """
         9 - Drive Backwards
 
