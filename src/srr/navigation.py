@@ -3,13 +3,14 @@
 Navigation wrapper script which controls the motion of the rover as it
 is given targets in the environment.
 """
+import shapely.geom
 import logging
 logger = logging.getLogger('navigation')
 
 
-def location():
+def pose():
     """
-    Current location of the rover, as best estimated by the odometry
+    Current pose of the rover, as best estimated by the odometry
     system in the global frame.
 
     @return (x,y,theta), with x, y in meters and theta is in radians
@@ -17,13 +18,14 @@ def location():
     return (0, 0, 0)
 
 
-def goto_waypoint(x, y):
+def location():
     """
-    Navigate toward a distant waypoint in the global frame, using
-    local obstacle avoidance if necessary.
+    Current location of the rover, as best estimated by the odometry
+    system in the global frame.
+
+    @return shapely.Point(x,y) in meters.
     """
-    logger.info("GOTO_WPT: {0}".format((x, y)))
-    pass
+    return shapely.geom.Point(pose()[0:2])
 
 
 def goto_angle(theta):
