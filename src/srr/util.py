@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-SRR logging configuration utility module.
+SRR configuration utility module.
 """
 import logging
 import logging.handlers
@@ -11,16 +11,18 @@ LOG_FILENAME = 'srr.log'
 START_TIME = time.time()
 
 
+def elapsed_time():
+    """
+    Simple helper function that returns elapsed time since startup.
+    """
+    global START_TIME
+    return time.time() - START_TIME
+
+
 class StartupTimeFormatter(logging.Formatter):
-    converter = dt.datetime.fromtimestamp
     def formatTime(self, record, datefmt=None):
-        ct = self.converter(record.created)
-        if datefmt:
-            s = ct.strftime(datefmt)
-        else:
-            t = ct.strftime("%Y-%m-%d %H:%M:%S")
-            s = "%s,%03d" % (t, record.msecs)
-        return s
+        global START_TIME
+        return "{:03.3}".format(record.created.time() - START_TIME)
 
 
 def setup_logging():

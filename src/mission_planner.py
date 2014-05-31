@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-The mission planner is the top-level autonomy for the rover.  
+The mission planner is the top-level autonomy for the rover.
 It is *THE* main outer loop for everything.
 """
 import argparse
@@ -8,7 +8,7 @@ import thread
 import yaml
 import time
 
-import srr.logging
+import srr.util
 import logging
 
 from flask import Flask
@@ -20,10 +20,11 @@ start_time = time.time()
 
 def main(args):
     """
-    This is the main autonomy system for the rover.
+    This is the main autonomy loop for the rover.
     """
     global mission
     global environment
+    global start_time
 
     logger = logging.getLogger('main')
 
@@ -35,7 +36,9 @@ def main(args):
 
     logger.info("Starting mission.")
     for task in mission:
-        print mission
+        logging.info("Task: {0}".format(task))
+        while task.timeout <= srr.util.elapsed_time():
+            time.sleep(1)
 
     logger.info("Completed mission.")
     # TODO: shutdown stuff here?
@@ -48,6 +51,6 @@ if __name__ == "__main__":
                         help='mission specification YAML file')
     args = parser.parse_args()
 
-    srr.logging.setup_logging()
+    srr.util.setup_logging()
     thread.start_new_thread(main, args)
     app.run()
