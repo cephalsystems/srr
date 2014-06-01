@@ -26,6 +26,11 @@ class Roboclaw(object):
         with self._device_lock:
             return self._port
 
+    @property
+    def is_connected(self):
+        with self._device_lock:            
+            return (self._device.port is None)
+
     @port.setter
     def port(self, value):
         with self._device_lock:
