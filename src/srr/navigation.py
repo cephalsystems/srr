@@ -7,10 +7,18 @@ import shapely.geometry
 import logging
 logger = logging.getLogger('navigation')
 
+# Potential field constants.
+K_OBS = 10.0
+K_TARGET = 1.0
+MAX_DISTANCE = 10.0
+
+# Driving constants.
 K_TURN = 50000
 K_DRIVE = 50000
 SPEED_LIMIT = 100000
 ACCEL_LIMIT = 10000
+
+ORIGIN = shapely.geometry.Point
 
 
 def clamp(value, minimum, maximum):
@@ -18,6 +26,18 @@ def clamp(value, minimum, maximum):
     Clamps the specified value between the given min and max values.
     """
     return max(minimum, min(value, maximum))
+
+
+def to_polar(point):
+    """
+    Converts a shapely Point to a (distance, angle) tuple.
+    """
+    return ORIGIN.distance(point), math.atan2(point.y, point.x)
+
+
+def from_polar(distance, angle):
+    return shapely.geometry.Point(distance * math.cos(angle),
+                                  distance * math.sin(angle))
 
 
 class Navigator(object):
@@ -67,6 +87,46 @@ class Navigator(object):
         Navigate toward a specified angle in the local frame.
         """
         logger.info("GOTO_ANG: {0}".format(theta))
+        point = shapely.geometry.Point(1000 * math.cos(theta),
+                                       1000 * math.sin(theta))
+        self._goto_target(point)
+
+    def goto_target(self, point):
+        """
+        Navigate toward a point in the local frame.  This considers
+        the local direction and the distance to the target.
+        """
+        logger.info("GOTO_TGT: {0}".format(point))
+        self._goto_target(point)
+
+    def _compute_safe_target(self, target, obstacles):
+        """
+        Computes new vector target using quadratic potential fields to
+        avoid obstacles.
+        """
+        polar_obstacles = [to_polar(obstacle) for obstacle in obstacles]
+        forces = [from_polar(-K_OBS*distance*distance, angle)
+                  for (distance, angle) in polar_obstacles]
+
+        # Attractive force for the target.
+        polar_target = to_polar(target)
+        polar_target[0] = max(polar_target[0], MAX_DISTANCE)
+        forces.append(from_polar(K_TARGET*polar_target[0]*polar_target[0],
+                                 polar_target[1]))
+
+        # Compute goal from these forces.
+        goal = ORIGIN
+        for force in forces:
+            goal = goal + force
+        polar_goal = to_polar(goal)
+        return from_polar(math.sqrt(polar_goal[0]), polar_goal[1])
+
+    def _goto_target(self, point):
+        """
+        Internal function to drive directly to a target location.
+        """
+        goal = self._compute_field(point, self.perceptor.obstacles)
+        distance, theta = to_polar(goal)
 
         # Divide the angle into 45 degree quadrants, reverse direction
         # each quadrant (to produce fake 'parallel' parking turns).
@@ -80,7 +140,7 @@ class Navigator(object):
             direction = 1
 
         # Create speeds based on proportional heuristic.
-        forward_speed = K_DRIVE * -math.log(theta / math.pi)  # Logarithmic
+        forward_speed = K_DRIVE * math.cos(theta) * distance
         turn_speed = K_TURN * (1.0 / (1.0 + math.exp(-2.0*theta)))  # Logistic
 
         # Combine turning and forward terms to get motor speed.
@@ -91,14 +151,6 @@ class Navigator(object):
         v1 = clamp(v1, -SPEED_LIMIT, SPEED_LIMIT)
         v2 = clamp(v1, -SPEED_LIMIT, SPEED_LIMIT)
         self.motors.mixed_set_speed_accel(ACCEL_LIMIT, v1, v2)
-
-    def goto_target(self, point):
-        """
-        Navigate toward a point in the local frame.  This only considers
-        the local direction and not the distance to the target.
-        """
-        logger.info("GOTO_VEC: {0}".format(point))
-        self.goto_angle(math.atan2(point.y, point.x))
 
     def main(self):
         """
