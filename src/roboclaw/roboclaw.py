@@ -1,13 +1,14 @@
 import serial
 import struct
-import time
 import threading
 
+
 class Roboclaw(object):
+
     """
     Interface for controlling Orion Roboclaw motor controllers.
     """
-    
+
     def __init__(self, port=None, address=0x80):
         # Create a lock for synchronizing changes to the actual
         # connection to the device.
@@ -28,7 +29,7 @@ class Roboclaw(object):
 
     @property
     def is_connected(self):
-        with self._device_lock:            
+        with self._device_lock:
             return (self._device.port is None)
 
     @port.setter
@@ -46,7 +47,7 @@ class Roboclaw(object):
     @address.setter
     def address(self, value):
         with self._device_lock:
-            self._address = address
+            self._address = value
 
     #######################################
     # Commands 0 - 7 Standard Commands
@@ -57,7 +58,7 @@ class Roboclaw(object):
 
     def m1_forward(self, value):
         """
-        0 - Drive Forward M1 
+        0 - Drive Forward M1
 
         Drive motor 1 forward. Valid data range is 0 - 127. A value of
         127 = full speed forward, 64 = about half speed forward and 0
@@ -70,7 +71,7 @@ class Roboclaw(object):
 
     def m1_backward(self, value):
         """
-        1 - Drive Backwards M1 
+        1 - Drive Backwards M1
 
         Drive motor 1 backwards. Valid data range is 0 - 127. A value
         of 127 full speed backwards, 64 = about half speed backward
@@ -106,7 +107,7 @@ class Roboclaw(object):
         3 - Set Maximum Main Voltage
 
         Sets main battery (B- / B+) maximum voltage level. The valid data
-        range is 0 - 30 (volts). If you are using a battery of any type 
+        range is 0 - 30 (volts). If you are using a battery of any type
         you can ignore this setting. During regenerative breaking a back
         voltage is applied to charge the battery. When using an ATX type
         power supply if it senses anything over 16V it will shut
@@ -122,7 +123,7 @@ class Roboclaw(object):
             self._send_command(3)
             self._write_byte(value)
             self._write_checksum()
-        
+
     def m2_forward(self, value):
         """
         4 - Drive Forward M2
@@ -139,7 +140,7 @@ class Roboclaw(object):
     def m2_backward(self, value):
         """
         5 - Drive Backwards M2
-        
+
         Drive motor 2 backwards. Valid data range is 0 - 127. A value
         of 127 full speed backwards, 64 = about half speed backward
         and 0 = full stop.
@@ -161,7 +162,7 @@ class Roboclaw(object):
             self._send_command(6)
             self._write_byte(value)
             self._write_checksum()
-    
+
     def m2_drive(self, value):
         """
         7 - Drive M2 (7 Bit)
@@ -185,11 +186,11 @@ class Roboclaw(object):
     # will begin to operate. At this point you only need to update
     # turn or drive data.
     #######################################
-    
+
     def mixed_forward(self, value):
         """
         8 - Drive Forward
-        
+
         Drive forward in mix mode. Valid data range is 0 - 127. A
         value of 0 = full stop and 127 = full forward.
         """
@@ -251,7 +252,7 @@ class Roboclaw(object):
     def mixed_turn(self, value):
         """
         13 - Turn Left or Right (7 Bit)
-        
+
         Turn left or right. Valid data range is 0 - 127. A value of 0
         = full left, 0 = stop turn and 127 = full right. (Note that this
         assumes left motor is M1 and right is M2.)
@@ -261,17 +262,17 @@ class Roboclaw(object):
             self._write_byte(value)
             self._write_checksum()
 
-    #######################################                                           
+    #######################################
     # Version, Status, and Settings Commands
     #
     # The following commands are used to read board status, version
     # information and set configuration values.
-    ####################################### 
+    #######################################
 
     @property
     def firmware_version(self):
         """
-        RoboClaw firmware version. 
+        RoboClaw firmware version.
 
         Returns up to 32 bytes and is terminated by a null character.
 
@@ -285,7 +286,8 @@ class Roboclaw(object):
     @property
     def main_voltage(self):
         """
-        The main battery voltage level connected to B+ and B- terminals (in volts).
+        The main battery voltage level connected to B+ and B- terminals
+        (in volts).
 
         Uses:
         24 - Read Main Battery Voltage Level
@@ -302,8 +304,9 @@ class Roboclaw(object):
     @property
     def logic_voltage(self):
         """
-        The logic battery voltage level connected to LB+ and LB- terminals (in volts).
-        
+        The logic battery voltage level connected to LB+ and LB- terminals
+        (in volts).
+
         Uses:
         25 - Read Logic Battery Voltage Level
         """
@@ -315,11 +318,11 @@ class Roboclaw(object):
                 return val
             else:
                 raise ValueError("Checksum mismatch.")
-    
+
     def set_logic_voltage_minimum(self, value):
         """
         26 - Set Minimum Logic Voltage Level
-        
+
         Sets logic input (LB- / LB+) minimum voltage level. If the
         battery voltages drops below the set voltage level RoboClaw
         will shut down. The value is cleared at start up and must set
@@ -330,24 +333,24 @@ class Roboclaw(object):
     def set_logic_voltage_maximum(self, value):
         """
         27 - Set Maximum Logic Voltage Level
-        
+
         Sets logic input (LB- / LB+) maximum voltage level. The valid
         data range is 0.0 - 28.0 (volts). By setting the maximum
         voltage level RoboClaw will go into shut down and requires a
         hard reset to recovers.
         """
         raise NotImplementedError()
-    
+
     @property
     def motor_currents(self):
         """
         The current draw from each motor (in amps).
-        
+
         Uses:
         49 - Read Motor Currents
         """
         with self._device_lock:
-            self._send_command(49);
+            self._send_command(49)
             motor1 = self._read_word() * 0.010
             motor2 = self._read_word() * 0.010
             crc = self._checksum & 0x7F
@@ -369,9 +372,9 @@ class Roboclaw(object):
         starting with QPPS, P = Proportional, I= Integral and D=
         Derivative. The defaults values are:
 
-        QPPS = 44000 
-        P = 0x00010000 
-        I = 0x00008000 
+        QPPS = 44000
+        P = 0x00010000
+        I = 0x00008000
         D = 0x00004000
 
         QPPS is the speed of the encoder when the motor is at 100% power.
@@ -388,7 +391,7 @@ class Roboclaw(object):
             qpps = self._read_long()
             crc = self._checksum & 0x7F
             if crc == self._read_byte():
-                return (p,i,d,qpps)
+                return (p, i, d, qpps)
             else:
                 raise ValueError("Checksum mismatch.")
 
@@ -405,13 +408,13 @@ class Roboclaw(object):
         starting with QPPS, P = Proportional, I= Integral and D=
         Derivative. The defaults values are:
 
-        QPPS = 44000 
-        P = 0x00010000 
-        I = 0x00008000 
+        QPPS = 44000
+        P = 0x00010000
+        I = 0x00008000
         D = 0x00004000
 
         QPPS is the speed of the encoder when the motor is at 100% power.
-        
+
         Uses:
         56 - Read Motor 2 Velocity P, I, D Constants
         29 - Set Velocity PID Constants for M2.
@@ -424,7 +427,7 @@ class Roboclaw(object):
             qpps = self._read_long()
             crc = self._checksum & 0x7F
             if crc == self._read_byte():
-                return (p,i,d,qpps)
+                return (p, i, d, qpps)
             else:
                 raise ValueError("Checksum mismatch.")
 
@@ -432,7 +435,7 @@ class Roboclaw(object):
     def main_voltage_range(self):
         """
         The Main Battery Voltages cutoffs, (min, max) in volts.
-        
+
         Uses:
         59 - Read Main Battery Voltage Settings
         57 - Set Main Battery Voltages
@@ -451,7 +454,7 @@ class Roboclaw(object):
     def logic_voltage_range(self):
         """
         The Logic Battery Voltages cutoffs, (min, max) in volts.
-        
+
         Uses:
         60 - Read Logic Battery Voltage Settings
         58 - Set Logic Battery Voltages
@@ -485,7 +488,7 @@ class Roboclaw(object):
         """
         # TODO: What are the units here?
         raise NotImplementedError()
-    
+
     @property
     def m1_position_pid(self):
         """
@@ -505,7 +508,7 @@ class Roboclaw(object):
             max = self._read_long()
             crc = self._checksum & 0x7F
             if crc == self._read_byte():
-                return (p,i,d,imax,deadzone,min,max)
+                return (p, i, d, imax, deadzone, min, max)
             else:
                 raise ValueError("Checksum mismatch.")
 
@@ -513,7 +516,7 @@ class Roboclaw(object):
     def m2_position_pid(self):
         """
         The position PID settings for M2.
-        
+
         Uses:
         64 - Read Motor 2 Position P, I, D Constants
         """
@@ -528,10 +531,10 @@ class Roboclaw(object):
             max = self._read_long()
             crc = self._checksum & 0x7F
             if crc == self._read_byte():
-                return (p,i,d,imax,deadzone,min,max)
+                return (p, i, d, imax, deadzone, min, max)
             else:
                 raise ValueError("Checksum mismatch.")
-        
+
     @property
     def temperature(self):
         """
@@ -541,7 +544,7 @@ class Roboclaw(object):
         82 - Read Temperature
         """
         with self._device_lock:
-            self._send_command(82);
+            self._send_command(82)
             val = self._read_word() * 0.1
             crc = self._checksum & 0x7F
             if crc == self._read_byte():
@@ -567,7 +570,7 @@ class Roboclaw(object):
         Logic Battery Low  0x80
         """
         with self._device_lock:
-            self._send_command(90);
+            self._send_command(90)
             val = self._read_byte()
             crc = self._checksum & 0x7F
             if crc == self._read_byte():
@@ -585,7 +588,7 @@ class Roboclaw(object):
         Bit 7    Enable RC/Analog Encoder support
         Bit 6-1  N/A
         Bit 0    Quadrature(0)/Absolute(1)
-        
+
         Uses:
         91 - Read Encoder Mode
         92 - Set Motor 1 Encoder Mode
@@ -602,7 +605,7 @@ class Roboclaw(object):
         Bit 7    Enable RC/Analog Encoder support
         Bit 6-1  N/A
         Bit 0    Quadrature(0)/Absolute(1)
-        
+
         Uses:
         91 - Read Encoder Mode
         93 - Set Motor 2 Encoder Mode
@@ -613,7 +616,7 @@ class Roboclaw(object):
     def m1_encoder_mode(self, value):
         """
         92 - Set Motor 1 Encoder Mode
-        
+
         Set the Encoder Mode for motor 1.
         """
         raise NotImplementedError()
@@ -630,12 +633,12 @@ class Roboclaw(object):
     def write_settings(self):
         """
         94 - Write Settings to EEPROM
-        
+
         Writes all settings to non-volatile memory.
         """
         raise NotImplementedError()
 
-    ####################################### 
+    #######################################
     # Quadrature Encoder Commands
     #
     # The following commands are used in dealing with the quadrature
@@ -644,22 +647,22 @@ class Roboclaw(object):
     # and speed of each pulse. There are two registers one each for M1
     # and M2. (Note: A microcontroller with a hardware UART is
     # recommended for use with packet serial modes).
-    #######################################     
+    #######################################
 
     @property
     def m1_encoder(self):
         """
         Tuple of decoder M1 counter and status.
-        
+
         Counter is a long variable which represents the current count
         which can be any value from 0 - 4,294,967,295. Each pulse from
         the quadrature encoder will increment or decrement the counter
         depending on the direction of rotation.
-        
+
         Status is the status byte for M1 decoder. It tracks counter
         underflow, direction, overflow and if the encoder is
         operational. The byte value represents:
-        
+
         Bit0 - Counter Underflow (1= Underflow Occurred, Clear After Reading)
         Bit1 - Direction (0 = Forward, 1 = Backwards)
         Bit2 - Counter Overflow (1= Underflow Occurred, Clear After Reading)
@@ -668,7 +671,7 @@ class Roboclaw(object):
         Bit5 - Reserved
         Bit6 - Reserved
         Bit7 - Reserved
-        
+
         Uses:
         16 - Read Quadrature Encoder Register M1
         """
@@ -686,16 +689,16 @@ class Roboclaw(object):
     def m2_encoder(self):
         """
         Tuple of decoder M2 counter and status.
-        
+
         Counter is a long variable which represents the current count
         which can be any value from 0 - 4,294,967,295. Each pulse from
         the quadrature encoder will increment or decrement the counter
         depending on the direction of rotation.
-        
+
         Status is the status byte for M2 decoder. It tracks counter
         underflow, direction, overflow and if the encoder is
         operational. The byte value represents:
-        
+
         Bit0 - Counter Underflow (1= Underflow Occurred, Clear After Reading)
         Bit1 - Direction (0 = Forward, 1 = Backwards)
         Bit2 - Counter Overflow (1= Underflow Occurred, Clear After Reading)
@@ -704,7 +707,7 @@ class Roboclaw(object):
         Bit5 - Reserved
         Bit6 - Reserved
         Bit7 - Reserved
-        
+
         Uses:
         17 - Read Quadrature Encoder Register M2
         """
@@ -714,7 +717,7 @@ class Roboclaw(object):
             status = self._read_byte()
             crc = self._checksum & 0x7F
             if crc == self._read_byte():
-                return (enc,status)
+                return (enc, status)
             else:
                 raise ValueError("Checksum mismatch.")
 
@@ -734,7 +737,7 @@ class Roboclaw(object):
             status = self._read_byte()
             crc = self._checksum & 0x7F
             if crc == self._read_byte():
-                return (enc, direction)
+                return (enc, status)
             else:
                 raise ValueError("Checksum mismatch.")
 
@@ -754,10 +757,10 @@ class Roboclaw(object):
             status = self._read_byte()
             crc = self._checksum & 0x7F
             if crc == self._read_byte():
-                return (enc, direction)
+                return (enc, status)
             else:
                 raise ValueError("Checksum mismatch.")
-    
+
     def reset_encoders(self):
         """
         20 - Reset Quadrature Encoder Counters
@@ -768,7 +771,7 @@ class Roboclaw(object):
             self._send_command(20)
             self._write_checksum()
 
-    ####################################### 
+    #######################################
     # Advanced Motor Control
     #
     # The following commands are used to control motor speeds,
@@ -779,8 +782,8 @@ class Roboclaw(object):
     # resolutions and maximum speeds at which they operate. So each
     # quadrature encoder will produce a different range of pulses per
     # second.
-    #######################################     
-    
+    #######################################
+
     @m1_velocity_pid.setter
     def m1_velocity_pid(self, p_i_d_qpps):
         """
@@ -794,7 +797,7 @@ class Roboclaw(object):
         starting with QPPS, P = Proportional, I= Integral and D=
         Derivative. The defaults values are:
 
-        QPPS = 44000 
+        QPPS = 44000
         P = 0x00010000 = 65536
         I = 0x00008000 = 32768
         D = 0x00004000 = 16384
@@ -802,14 +805,14 @@ class Roboclaw(object):
         QPPS is the speed of the encoder when the motor is at 100% power.
         """
         p, i, d, qpps = p_i_d_qpps
-        
+
         with self._device_lock:
             self._send_command(28)
             self._write_long(d)
             self._write_long(p)
             self._write_long(i)
             self._write_long(qpps)
-            self._write_checksum();
+            self._write_checksum()
 
     @m2_velocity_pid.setter
     def m2_velocity_pid(self, p_i_d_qpps):
@@ -828,20 +831,20 @@ class Roboclaw(object):
         P = 0x00010000 = 65535
         I = 0x00008000 = 32768
         D = 0x00004000 = 16384
-        
+
         QPPS is the speed of the encoder when the motor is at 100%
         power. P, I, D are the default values used after a reset.
         """
         p, i, d, qpps = p_i_d_qpps
-        
+
         with self._device_lock:
             self._send_command(29)
             self._write_long(d)
             self._write_long(p)
             self._write_long(i)
             self._write_long(qpps)
-            self._write_checksum();
-    
+            self._write_checksum()
+
     @property
     def m1_current_speed(self):
         """
@@ -850,9 +853,9 @@ class Roboclaw(object):
         make a independent PID routine. The resolution of the command
         is required to create a PID routine using any microcontroller
         or PC used to drive RoboClaw.
-        
+
         Uses:
-        30 - Read Current Speed M1        
+        30 - Read Current Speed M1
         """
         with self._device_lock:
             self._send_command(30)
@@ -872,9 +875,9 @@ class Roboclaw(object):
         make a independent PID routine. The resolution of the command
         is required to create a PID routine using any microcontroller
         or PC used to drive RoboClaw.
-        
+
         Uses:
-        31 - Read Current Speed M1        
+        31 - Read Current Speed M1
         """
         with self._device_lock:
             self._send_command(31)
@@ -960,7 +963,7 @@ class Roboclaw(object):
         with self._device_lock:
             self._send_command(36)
             self._write_slong(speed)
-            self._write_checksum();
+            self._write_checksum()
 
     def mixed_set_speed(self, speed_m1, speed_m2):
         """
@@ -1126,7 +1129,8 @@ class Roboclaw(object):
             self._write_byte(buffered)
             self._write_checksum()
 
-    def mixed_set_speed_distance(self, speed_m1, distance_m1, speed_m2, distance_m2, buffered=False):
+    def mixed_set_speed_distance(self, speed_m1, distance_m1,
+                                 speed_m2, distance_m2, buffered=False):
         """
         43 - Buffered Mix Mode Drive M1 / M2 With Signed Speed And Distance
 
@@ -1155,7 +1159,8 @@ class Roboclaw(object):
             self._write_byte(buffered)
             self._write_checksum()
 
-    def m1_set_speed_accel_distance(self, speed, accel, distance, buffered=False):
+    def m1_set_speed_accel_distance(self, speed, accel, distance,
+                                    buffered=False):
         """
         44 - Buffered M1 Drive With Signed Speed, Accel And Distance
 
@@ -1186,7 +1191,8 @@ class Roboclaw(object):
             self._write_byte(buffer)
             self._write_checksum()
 
-    def m2_set_speed_accel_distance(self, speed, accel, distance, buffered=False):
+    def m2_set_speed_accel_distance(self, speed, accel, distance,
+                                    buffered=False):
         """
         45 - Buffered M2 Drive With Signed Speed, Accel And Distance
 
@@ -1217,9 +1223,10 @@ class Roboclaw(object):
             self._write_byte(buffer)
             self._write_checksum()
 
-    def mixed_set_speed_accel_distance(self, accel, speed_m1, distance_m1, speed_m2, distance_m2, buffered=False):
+    def mixed_set_speed_accel_distance(self, accel, speed_m1, distance_m1,
+                                       speed_m2, distance_m2, buffered=False):
         """
-        46 - Buffered Mix Mode Drive M1 / M2 With Signed Speed, Accel And Distance
+        46 - Buffered Mix Mode Drive M1 / M2 With Signed Speed, Accel, Distance
 
         Drive M1 and M2 with a speed, acceleration and distance
         value. The sign indicates which direction the motor will
@@ -1267,18 +1274,18 @@ class Roboclaw(object):
         47 - Read Buffer Length
         """
         with self._device_lock:
-            self._send_command(47);
-            buffer1 = self._read_byte();
-            buffer2 = self._read_byte();
+            self._send_command(47)
+            buffer1 = self._read_byte()
+            buffer2 = self._read_byte()
             crc = self._checksum & 0x7F
             if crc == self._read_byte():
-                return (buffer1,buffer2);
+                return (buffer1, buffer2)
             else:
                 raise ValueError("Checksum mismatch.")
-            
+
     def mixed_set_speed_iaccels(self, accel_m1, speed_m1, accel_m2, speed_m2):
         """
-        50 - Mix Mode Drive M1 / M2 With Signed Speed And Individual Accelerations
+        50 - Mix Mode Drive M1 / M2 With Signed Speed, Individual Accelerations
 
         Drive M1 and M2 in the same command using one value for
         acceleration and two signed speed values for each motor. The
@@ -1306,10 +1313,13 @@ class Roboclaw(object):
             self._write_slong(speed_m2)
             self._write_checksum()
 
-    def mixed_set_speed_iaccel_distance(self, accel_m1, speed_m1, distance_m1, accel_m2, speed_m2, distance_m2, buffered=False):
+    def mixed_set_speed_iaccel_distance(self, accel_m1, speed_m1, distance_m1,
+                                        accel_m2, speed_m2, distance_m2,
+                                        buffered=False):
         """
-        51 - Buffered Mix Mode Drive M1 / M2 With Signed Speed, Individual Accel And Distance
-        
+        51 - Buffered Mix Mode Drive M1 / M2 With Signed Speed,
+        Individual Accel, Distance
+
         Drive M1 and M2 with a speed, acceleration and distance
         value. The sign indicates which direction the motor will
         run. The acceleration and distance values are not signed. This
@@ -1359,11 +1369,11 @@ class Roboclaw(object):
             self._write_sword(duty)
             self._write_word(accel)
             self._write_checksum()
-    
+
     def m2_set_duty_accel(self, accel, duty):
         """
         53 - Drive M2 With Signed Duty And Acceleration
-        
+
         Drive M2 with a signed duty and acceleration value. The sign
         indicates which direction the motor will run. The acceleration
         values are not signed. This command is used to drive the motor
@@ -1387,7 +1397,7 @@ class Roboclaw(object):
         the motor will run. The acceleration value is not signed. This
         command is used to drive the motor by PWM using an
         acceleration value for ramping.
-        
+
         The duty value is signed and the range is +/-1500.
         The accel value range is 0 to 65535.
         """
@@ -1416,8 +1426,8 @@ class Roboclaw(object):
         61 - Set Motor 1 Position PID Constants
         63 - Read Motor 1 Position P, I, D Constants
         """
-        p,i,d,imax,deadzone,min,max = p_i_d_imax_dz_min_max
-        
+        p, i, d, imax, deadzone, min, max = p_i_d_imax_dz_min_max
+
         with self._device_lock:
             self._send_command(61)
             self._write_long(p)
@@ -1425,8 +1435,8 @@ class Roboclaw(object):
             self._write_long(d)
             self._write_long(imax)
             self._write_long(deadzone)
-            self._write_long(min);
-            self._write_long(max);
+            self._write_long(min)
+            self._write_long(max)
 
     @m2_position_pid.setter
     def m2_position_pid(self, value):
@@ -1445,8 +1455,8 @@ class Roboclaw(object):
         62 - Set Motor 2 Position PID Constants
         64 - Read Motor 2 Position P, I, D Constants
         """
-        p,i,d,imax,deadzone,min,max = p_i_d_imax_dz_min_max
-        
+        p, i, d, imax, deadzone, min, max = value
+
         with self._device_lock:
             self._send_command(62)
             self._write_long(p)
@@ -1454,8 +1464,8 @@ class Roboclaw(object):
             self._write_long(d)
             self._write_long(imax)
             self._write_long(deadzone)
-            self._write_long(min);
-            self._write_long(max);
+            self._write_long(min)
+            self._write_long(max)
 
     def m1_set_speed_accel_decel_position(self, accel, speed, decel, position):
         """
@@ -1471,7 +1481,7 @@ class Roboclaw(object):
             self._send_command(65)
             self._write_long(accel)
             self._write_long(speed)
-            self._write_long(deccel)
+            self._write_long(decel)
             self._write_long(position)
             self._write_byte(buffer)
             self._write_checksum()
@@ -1490,12 +1500,14 @@ class Roboclaw(object):
             self._send_command(66)
             self._write_long(accel)
             self._write_long(speed)
-            self._write_long(deccel)
+            self._write_long(decel)
             self._write_long(position)
             self._write_byte(buffer)
             self._write_checksum()
-        
-    def mixed_set_speed_accel_decel_position(self, accel_m1, speed_m1, decel_m1, position_m1, accel_m2, speed_m2, decel_m2, position_m2, buffered=False):
+
+    def mixed_set_speed_accel_decel_position(
+            self, accel_m1, speed_m1, decel_m1, position_m1,
+            accel_m2, speed_m2, decel_m2, position_m2, buffered=False):
         """
         67 - Drive M1 & M2 with signed Speed, Accel, Deccel and Position
 
@@ -1507,14 +1519,14 @@ class Roboclaw(object):
         """
         with self._device_lock:
             self._send_command(67)
-            self._write_long(accel1)
-            self._write_long(speed1)
-            self._write_long(deccel1)
-            self._write_long(position1)
-            self._write_long(accel2)
-            self._write_long(speed2)
-            self._write_long(deccel2)
-            self._write_long(position2)
+            self._write_long(accel_m1)
+            self._write_long(speed_m1)
+            self._write_long(decel_m1)
+            self._write_long(position_m1)
+            self._write_long(accel_m2)
+            self._write_long(speed_m2)
+            self._write_long(decel_m2)
+            self._write_long(position_m2)
             self._write_byte(buffer)
             self._write_checksum()
 
@@ -1545,12 +1557,12 @@ class Roboclaw(object):
         self._write(chr(self._address))
         self._checksum += command
         self._write(chr(command))
-        
+
     def _read_byte(self):
         val = struct.unpack('>B', self._read(1))
         self._checksum += val[0]
         return val[0]
-        
+
     def _read_sbyte(self):
         val = struct.unpack('>b', self._read(1))
         self._checksum += val[0]
@@ -1583,7 +1595,7 @@ class Roboclaw(object):
         self._checksum += (val[0] >> 16) & 0xFF
         self._checksum += (val[0] >> 24) & 0xFF
         return val[0]
-        
+
     def _write_byte(self, val):
         val = int(val)
         self._checksum += val
@@ -1605,7 +1617,7 @@ class Roboclaw(object):
         self._checksum += val
         self._checksum += (val >> 8) & 0xFF
         return self._write(struct.pack('>h', val))
-        
+
     def _write_long(self, val):
         val = int(val)
         self._checksum += val
@@ -1623,5 +1635,4 @@ class Roboclaw(object):
         return self._write(struct.pack('>l', val))
 
     def _write_checksum(self):
-        return self._write_byte(self._checksum & 0x7F);
-        
+        return self._write_byte(self._checksum & 0x7F)
