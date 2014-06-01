@@ -1,23 +1,37 @@
 #!/usr/bin/env python
-"""
-Collection wrapper script which controls the motion of the scoop and
-collector, in conjunction with the navigation subsystem.
-"""
+import time
 import logging
 logger = logging.getLogger('collection')
 
 
-def scoop():
+class Collector(object):
     """
-    Perform a scooping action.
+    Collection wrapper object which controls the motion of the scoop and
+    collector, in conjunction with the navigation and perception subsystems.
     """
-    logger.info("SCOOPING")
-    pass
+    def __init__(self, navigator, perceptor):
+        self.navigator = navigator
+        self.perceptor = perceptor
 
+        logging.info("Collector initialized.")
 
-def bag():
-    """
-    Perform a bagging action.
-    """
-    logger.info("BAGGING")
-    pass
+    def shutdown(self):
+        """
+        Shuts down the main function for this object and waits for it
+        to complete.
+        """
+        logging.info("Collector shutdown.")
+
+    def scoop(self):
+        """
+        Perform a scooping action.
+        """
+        logger.info("SCOOPING")
+        time.sleep(2)
+
+    def bag(self):
+        """
+        Perform a bagging action.
+        """
+        logger.info("BAGGING")
+        time.sleep(2)

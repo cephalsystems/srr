@@ -2,8 +2,8 @@
 environment:
   origin:
     # Absolute location in latitude/longitude/heading (degrees) ]
-    [ 41.00, -81.00, 90 ] 
-    
+    [ 41.00, -81.00, 90 ]
+
   start:
     [ 0, 0, 0 ]
   bounds:

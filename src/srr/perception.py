@@ -1,53 +1,69 @@
 #!/usr/bin/env python
-"""
-Perception wrapper script which provides object and obstacle detection
-information to other components.
-"""
+import time
+import threading
 import shapely.geom
 import logging
 logger = logging.getLogger('perception')
 
 
-def pose():
+class Perceptor(object):
     """
-    Current pose of the rover, as best estimated by the perception
-    system in the global frame.
-
-    @return (x,y,theta), with x, y in meters and theta is in radians
+    Perception wrapper object which provides object and obstacle detection
+    information to other components.
     """
-    return (0, 0, 0)
+    def __init__(self, environment, args):
+        # Get rover starting location from environment
+        self.position = shapely.geom.Point(environment.start[0],
+                                           environment.start[1])
+        self.rotation = environment.start[2]
 
+        # Start main thread internally
+        self.is_running = True
+        self._thread = threading.start_new_thread(self.main, ())
 
-def location():
-    """
-    Current location of the rover, as best estimated by the perception
-    system in the global frame.
+        logging.info("Perceptor initialized.")
 
-    @return shapely.Point(x,y) in meters.
-    """
-    return shapely.geom.Point(pose()[0:2])
+    def shutdown(self):
+        """
+        Shuts down the main function for this object and waits for it
+        to complete.
+        """
+        self.is_running = False
+        self._thread.join()
 
+        logging.info("Perceptor shutdown.")
 
-def obstacles():
-    """
-    List of obstacles, specified as shapely.Point(x.y) tuples in the
-    rover local frame in meters.
-    """
-    return [shapely.geom.Point(10, 10),
-            shapely.geom.Point(-10, 10)]
+    @property
+    def pose(self):
+        """
+        Current (x,y,theta) pose of the rover, as best estimated by the
+        odometry system in the global frame.
+        """
+        return self._position.x, self._position.y, self._rotation
 
+    @property
+    def obstacles(self):
+        """
+        List of obstacles, specified as shapely.Point(x.y) tuples in the
+        rover local frame in meters.
+        """
+        return [shapely.geom.Point(10, 10),
+                shapely.geom.Point(-10, 10)]
 
-def targets():
-    """
-    List of potential targets, specified as (x,y) tuples in the rover
-    local frame in meters.
-    """
-    return [shapely.Point(5, 5)]
+    @property
+    def targets(self):
+        """
+        List of potential targets, specified as (x,y) tuples in the rover
+        local frame in meters.
+        """
+        return [shapely.Point(5, 5)]
 
-
-def main(args):
-    """
-    Main launch function.  This is called from within a thread in
-    the launching script.
-    """
-    pass
+    def main(self):
+        """
+        Main execution function.  This is called from within a thread in
+        the constructor.  The is_running flag is used to indicate when it
+        should stop executing.
+        """
+        while (self.is_running):
+            time.sleep(1)
+            pass
