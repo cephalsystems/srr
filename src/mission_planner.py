@@ -27,7 +27,8 @@ class MissionPlanner(object):
 
     def __init__(self, args):
         """
-        This is the main autonomy loop for the rover.
+        Starts up the mission planner for the rover, instantiating the
+        underlying navigation, perception, and collection subsystems.
         """
         self.task = None
 
@@ -51,22 +52,26 @@ class MissionPlanner(object):
         thread.start_new_thread(self.main, ())
 
     def main(self):
+        """
+        Main planning loop.  This dequeues tasks from the mission and
+        attempts to execute each one until it completes or a timeout
+        is reached.
+        """
         logger.info("Starting mission.")
         for task in self.mission:
             self.task = task
 
-            logging.info("Executing task: {0}".format(task))
+            logging.info("Executing task '{0}'.".format(task))
             while srr.util.elapsed_time() <= task.timeout:
                 if self.perform_task(task):
                     break
                 else:
                     time.sleep(1)
-
         logger.info("Completed mission.")
+
         self.perceptor.shutdown()
         self.navigator.shutdown()
         self.collector.shutdown()
-
         logger.info("Shutdown complete.")
 
     def perform_task(self, task):
@@ -111,9 +116,11 @@ class MissionPlanner(object):
             return False
         elif task.bounds.type != shapely.geom.Point:
             # If we are inside a bounded area, just drive around.
+            logger.info("Searching '{0}'.".format(task.name))
             self.navigator.goto_angle(0)
         else:
             # If we have reached a destination point, skip to next task.
+            logger.info("Task '{0}' completed.".format(task.name))
             return True
 
 # TODO: add Flask routes for KML stuff!
