@@ -39,6 +39,7 @@ class cephal::packages {
                     # SRC build dependencies
                     'pykml',
                     'flask',
+                    'shapely',
                     ]
 
   # Install the required pip packages.
