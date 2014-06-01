@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import time
 import threading
-import shapely.geom
+import shapely.geometry
 import logging
 logger = logging.getLogger('perception')
 
@@ -13,8 +13,8 @@ class Perceptor(object):
     """
     def __init__(self, environment, args):
         # Get rover starting location from environment
-        self.position = shapely.geom.Point(environment.start[0],
-                                           environment.start[1])
+        self.position = shapely.geometry.Point(environment.start[0],
+                                               environment.start[1])
         self.rotation = environment.start[2]
 
         # Start main thread internally
@@ -47,8 +47,8 @@ class Perceptor(object):
         List of obstacles, specified as shapely.Point(x.y) tuples in the
         rover local frame in meters.
         """
-        return [shapely.geom.Point(10, 10),
-                shapely.geom.Point(-10, 10)]
+        return [shapely.geometry.Point(10, 10),
+                shapely.geometry.Point(-10, 10)]
 
     @property
     def targets(self):
@@ -56,7 +56,7 @@ class Perceptor(object):
         List of potential targets, specified as (x,y) tuples in the rover
         local frame in meters.
         """
-        return [shapely.Point(5, 5)]
+        return [shapely.geometry.Point(5, 5)]
 
     def main(self):
         """

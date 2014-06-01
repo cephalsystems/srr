@@ -2,7 +2,7 @@
 import math
 import time
 import threading
-import shapely.geom
+import shapely.geometry
 import logging
 logger = logging.getLogger('navigation')
 
@@ -14,8 +14,8 @@ class Navigator(object):
     """
     def __init__(self, environment, args):
         # Get rover starting location from environment
-        self.position = shapely.geom.Point(environment.start[0],
-                                           environment.start[1])
+        self.position = shapely.geometry.Point(environment.start[0],
+                                               environment.start[1])
         self.rotation = environment.start[2]
 
         # Start main thread internally

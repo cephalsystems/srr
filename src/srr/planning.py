@@ -3,7 +3,7 @@ import thread
 import yaml
 import time
 import math
-import shapely.geom
+import shapely.geometry
 
 import srr.util
 import srr.navigation
@@ -109,7 +109,7 @@ class MissionPlanner(object):
             target_angle = math.atan2(vector.y, vector.x)
             self.navigator.goto_angle(target_angle - rover_angle)
             return False
-        elif task.bounds.type != shapely.geom.Point:
+        elif task.bounds.type != shapely.geometry.Point:
             # If we are inside a bounded area, just drive around.
             logger.info("Searching '{0}'.".format(task.name))
             self.navigator.goto_angle(0)

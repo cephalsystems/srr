@@ -7,7 +7,7 @@ import logging.handlers
 import collections
 import time
 import sys
-import shapely.geom
+import shapely.geometry
 
 LOG_FILENAME = 'srr.log'
 START_TIME = time.time()
@@ -28,10 +28,10 @@ class StartupTimeFormatter(logging.Formatter):
 
 
 def setup_logging():
-    formatter = logging.StartupTimeFormatter("%(asctime)s - "
-                                             "%(name)s - "
-                                             "%(levelname)s - "
-                                             "%(message)s")
+    formatter = StartupTimeFormatter("%(asctime)s - "
+                                     "%(name)s - "
+                                     "%(levelname)s - "
+                                     "%(message)s")
     root_logger = logging.getLogger()
 
     # Set up rolling log files for root logger.
@@ -56,9 +56,9 @@ class Task(object):
                              "task '{0}'".format(task_name))
 
         if task_yaml.bounds:
-            self.bounds = shapely.geom.Polygon(task_yaml.bounds)
+            self.bounds = shapely.geometry.Polygon(task_yaml.bounds)
         if task_yaml.location:
-            self.location = shapely.geom.Point(task_yaml.location)
+            self.location = shapely.geometry.Point(task_yaml.location)
 
         if not self.location:
             self.location = self.bounds.centroid
