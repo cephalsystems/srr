@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import argparse
 import thread
 import yaml
 import time
@@ -12,10 +11,6 @@ import srr.collection
 
 import logging
 logger = logging.getLogger('mission')
-
-from flask import Flask
-
-mission_planner = None
 
 
 class MissionPlanner(object):
@@ -122,16 +117,3 @@ class MissionPlanner(object):
             # If we have reached a destination point, skip to next task.
             logger.info("Task '{0}' completed.".format(task.name))
             return True
-
-# TODO: add Flask routes for KML stuff!
-
-app = Flask(__name__)
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Run the SRR rover.')
-    parser.add_argument('-m', '--mission', type=str, default='mission.yaml',
-                        help='mission specification YAML file')
-    args = parser.parse_args()
-
-    srr.util.setup_logging()
-    mission_planner = MissionPlanner(args)
-    app.run()
