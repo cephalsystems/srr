@@ -17,6 +17,7 @@ K_TURN = 50000
 K_DRIVE = 50000
 SPEED_LIMIT = 100000
 ACCEL_LIMIT = 10000
+WHEELBASE_WIDTH = 0.5  
 
 ORIGIN = shapely.geometry.Point
 
@@ -80,7 +81,7 @@ class Navigator(object):
         Current (x,y,theta) pose of the rover, as best estimated by the
         odometry system in the global frame.
         """
-        return self._position.x, self._position.y, self._rotation
+        return self.position.x, self.position.y, self._rotation
 
     def goto_angle(self, theta):
         """

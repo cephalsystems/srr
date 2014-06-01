@@ -20,6 +20,8 @@ if __name__ == "__main__":
                         help='simulate movement and perception')
     parser.add_argument('-v', '--vision', type=str,
                         help='perception simulation KML file')
+    parser.add_argument('-c', '--console', action='store_true',
+                        help='run as interactive console')
     parser.add_argument('-mp', '--motor-port', type=str, default=
                         '/dev/serial/by-path/pci-0000:00:14.0-usb-0:4:1.0',
                         help='serial port for drivetrain roboclaw')

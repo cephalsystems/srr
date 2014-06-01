@@ -40,7 +40,7 @@ class Perceptor(object):
         Current (x,y,theta) pose of the rover, as best estimated by the
         odometry system in the global frame.
         """
-        return self._position.x, self._position.y, self._rotation
+        return self.position.x, self.position.y, self._rotation
 
     @property
     def obstacles(self):
@@ -58,6 +58,14 @@ class Perceptor(object):
         local frame in meters.
         """
         return [shapely.geometry.Point(5, 5)]
+
+    @property
+    def home(self):
+        """
+        Shapely point indicating the home platform position relative 
+        to the rover local frame in meters, or None if it is not detected.
+        """
+        return shapely.geometry.Point(0, 0)
 
     def main(self):
         """

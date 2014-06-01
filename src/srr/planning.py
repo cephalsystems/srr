@@ -48,7 +48,8 @@ class MissionPlanner(object):
                                                   args)
 
         self.is_running = True
-        self._thread = threading.Thread(target=self.main, name='planner')
+        self._thread = threading.Thread(target=self.main,
+                                        args=[args], name='planner')
         self._thread.start()
 
     def shutdown(self):
@@ -61,13 +62,17 @@ class MissionPlanner(object):
 
         logging.info("Navigator shutdown.")
 
-    def main(self):
+    def main(self, args):
         """
         Main planning loop.  This dequeues tasks from the mission and
         attempts to execute each one until it completes or a timeout
         is reached.
         """
-        self.perform_mission()
+        if args.console:
+            import IPython
+            IPython.embed()
+        else:
+            self.perform_mission()
 
         self.perceptor.shutdown()
         self.navigator.shutdown()
