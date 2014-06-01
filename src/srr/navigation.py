@@ -2,9 +2,22 @@
 import math
 import time
 import threading
+import roboclaw
 import shapely.geometry
 import logging
 logger = logging.getLogger('navigation')
+
+K_TURN = 50000
+K_DRIVE = 50000
+SPEED_LIMIT = 100000
+ACCEL_LIMIT = 10000
+
+
+def clamp(value, minimum, maximum):
+    """
+    Clamps the specified value between the given min and max values.
+    """
+    return max(minimum, min(value, maximum))
 
 
 class Navigator(object):
@@ -20,6 +33,9 @@ class Navigator(object):
         self.position = shapely.geometry.Point(environment.start[0],
                                                environment.start[1])
         self.rotation = environment.start[2]
+
+        # Connect to drivetrain Roboclaw.
+        self.motors = roboclaw.Roboclaw(args.motor_port)
 
         # Start main thread internally.
         self.is_running = True
@@ -51,7 +67,30 @@ class Navigator(object):
         Navigate toward a specified angle in the local frame.
         """
         logger.info("GOTO_ANG: {0}".format(theta))
-        pass
+
+        # Divide the angle into 45 degree quadrants, reverse direction
+        # each quadrant (to produce fake 'parallel' parking turns).
+        if (abs(theta) > 3.0*math.pi/4.0):
+            direction = -1
+        elif (abs(theta) > math.pi/2.0):
+            direction = 1
+        elif (abs(theta) > math.pi/4.0):
+            direction = -1
+        else:
+            direction = 1
+
+        # Create speeds based on proportional heuristic.
+        forward_speed = K_DRIVE * -math.log(theta / math.pi)  # Logarithmic
+        turn_speed = K_TURN * (1.0 / (1.0 + math.exp(-2.0*theta)))  # Logistic
+
+        # Combine turning and forward terms to get motor speed.
+        v1 = direction * (forward_speed - turn_speed)
+        v2 = direction * (forward_speed + turn_speed)
+
+        # Limit velocities to reasonable range.
+        v1 = clamp(v1, -SPEED_LIMIT, SPEED_LIMIT)
+        v2 = clamp(v1, -SPEED_LIMIT, SPEED_LIMIT)
+        self.motors.mixed_set_speed_accel(ACCEL_LIMIT, v1, v2)
 
     def goto_target(self, point):
         """
