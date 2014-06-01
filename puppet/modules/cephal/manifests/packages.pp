@@ -38,6 +38,7 @@ class cephal::packages {
                     'autopep8',
                     # SRC build dependencies
                     'pykml',
+                    'flask',
                     ]
 
   # Install the required pip packages.
