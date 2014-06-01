@@ -29,3 +29,6 @@ if __name__ == "__main__":
     # Start web server to publish live feeds of rover activity.
     app = flask.Flask(__name__)
     app.run()
+
+    # Shut down mission planner if server is stopped.
+    mission_planner.shutdown()

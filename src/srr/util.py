@@ -4,7 +4,6 @@ SRR configuration utility module.
 """
 import logging
 import logging.handlers
-import collections
 import time
 import sys
 import shapely.geometry
@@ -24,7 +23,7 @@ def elapsed_time():
 class StartupTimeFormatter(logging.Formatter):
     def formatTime(self, record, datefmt=None):
         global START_TIME
-        return "{:03.3}".format(record.created.time() - START_TIME)
+        return "{:03.3}".format(record.created - START_TIME)
 
 
 def setup_logging():
@@ -33,6 +32,7 @@ def setup_logging():
                                      "%(levelname)s - "
                                      "%(message)s")
     root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
 
     # Set up rolling log files for root logger.
     file_handler = logging.handlers.RotatingFileHandler(LOG_FILENAME,
@@ -43,7 +43,7 @@ def setup_logging():
 
     # Set up logging to stdout for root logger.
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.WARNING)
+    console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(formatter)
     root_logger.addHandler(console_handler)
 
@@ -51,23 +51,33 @@ def setup_logging():
 class Task(object):
     def __init__(self, task_name, task_yaml, environment):
         self.name = task_name
-        if not task_yaml.bounds and not task_yaml.location:
+        if 'bounds' in task_yaml:
+            self.bounds = shapely.geometry.Polygon(task_yaml['bounds'])
+        if 'location' in task_yaml:
+            self.location = shapely.geometry.Point(task_yaml['location'])
+
+        if 'bounds' not in task_yaml and 'location' not in task_yaml:
             raise ValueError("Location and bounds not specified for "
                              "task '{0}'".format(task_name))
-
-        if task_yaml.bounds:
-            self.bounds = shapely.geometry.Polygon(task_yaml.bounds)
-        if task_yaml.location:
-            self.location = shapely.geometry.Point(task_yaml.location)
-
-        if not self.location:
+        elif 'location' not in task_yaml:
             self.location = self.bounds.centroid
-        if not self.bounds:
+        elif 'bounds' not in task_yaml:
             self.bounds = self.location
 
-        self.is_forced = task_yaml.is_forced
-        self.timeout = task_yaml.timeout
+        self.is_forced = ('is_forced' in task_yaml) and task_yaml['is_forced']
+        self.timeout = task_yaml['timeout']
         self.environment = environment
+
+    @property
+    def kml():
+        pass
+
+
+class Environment(object):
+    def __init__(self, origin, start, bounds, obstacles):
+        self.origin = origin
+        self.start = start
+        self.bounds = shapely.geometry.Polygon(bounds, obstacles)
 
     @property
     def kml():
@@ -78,16 +88,20 @@ def parse_environment(environment_yaml):
     """
     Parse raw YAML environment.
     """
-    environment = {}
-    environment.origin = environment_yaml.origin
-    environment.start = environment_yaml.start
-    environment.bounds = shapely.geom.Polygon(environment.bounds,
-                                              environment.obstacles)
+    bounds = [tuple(coords) for coords in environment_yaml['bounds']]
+    obstacles = [[tuple(coords) for coords in obstacle]
+                 for (name, obstacle) in
+                 environment_yaml['obstacles'].iteritems()]
+
+    return Environment(environment_yaml['origin'],
+                       environment_yaml['start'],
+                       bounds,
+                       obstacles)
 
 
 def parse_mission(mission_yaml, environment):
     """
     Parse raw YAML mission.
     """
-    return collections.OrderedDict(Task(name, task_yaml, environment)
-                                   for (name, task_yaml) in mission_yaml)
+    return [Task(name, task_yaml, environment)
+            for (name, task_yaml) in mission_yaml.iteritems()]

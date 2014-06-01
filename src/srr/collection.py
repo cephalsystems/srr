@@ -9,7 +9,7 @@ class Collector(object):
     Collection wrapper object which controls the motion of the scoop and
     collector, in conjunction with the navigation and perception subsystems.
     """
-    def __init__(self, navigator, perceptor):
+    def __init__(self, navigator, perceptor, args):
         self.navigator = navigator
         self.perceptor = perceptor
 

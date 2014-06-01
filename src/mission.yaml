@@ -19,8 +19,8 @@ mission:
   # List of objectives to be executed IN ORDER.
   initial_sample: 
     # Each objective can have a position, a bounds, and a timeout.
-    position: [ 21, 20 ]
+    location: [ 21, 20 ]
     timeout: 240 
   explore_a_bit:
-    position: [ 23, 20 ]
+    location: [ 23, 20 ]
     timeout: 260

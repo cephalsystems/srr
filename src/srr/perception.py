@@ -19,7 +19,8 @@ class Perceptor(object):
 
         # Start main thread internally
         self.is_running = True
-        self._thread = threading.start_new_thread(self.main, ())
+        self._thread = threading.Thread(target=self.main, name='perceptor')
+        self._thread.start()
 
         logging.info("Perceptor initialized.")
 
@@ -66,4 +67,3 @@ class Perceptor(object):
         """
         while (self.is_running):
             time.sleep(1)
-            pass

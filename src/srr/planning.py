@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import thread
+import threading
 import yaml
 import time
 import math
@@ -7,6 +7,7 @@ import shapely.geometry
 
 import srr.util
 import srr.navigation
+import srr.perception
 import srr.collection
 
 import logging
@@ -14,6 +15,7 @@ logger = logging.getLogger('mission')
 
 
 class MissionPlanner(object):
+
     """
     The mission planner is the top-level autonomy for the rover.
     It is *THE* main outer loop for everything.
@@ -30,8 +32,9 @@ class MissionPlanner(object):
         logger.info("Loading mission '{0}'.".format(args.mission))
         with open(args.mission, 'rb') as mission_file:
             mission_spec = yaml.safe_load(mission_file)
-            self.environment = srr.util.parse_mission(mission_spec.environment)
-            self.mission = srr.util.parse_mission(mission_spec.mission,
+            self.environment = srr.util.parse_environment(
+                mission_spec['environment'])
+            self.mission = srr.util.parse_mission(mission_spec['mission'],
                                                   self.environment)
 
         logger.info("Starting up subsystems.")
@@ -44,7 +47,19 @@ class MissionPlanner(object):
                                                   self.perceptor,
                                                   args)
 
-        thread.start_new_thread(self.main, ())
+        self.is_running = True
+        self._thread = threading.Thread(target=self.main, name='planner')
+        self._thread.start()
+
+    def shutdown(self):
+        """
+        Shuts down the main function for this object and waits for it
+        to complete.
+        """
+        self.is_running = False
+        self._thread.join()
+
+        logging.info("Navigator shutdown.")
 
     def main(self):
         """
@@ -52,22 +67,32 @@ class MissionPlanner(object):
         attempts to execute each one until it completes or a timeout
         is reached.
         """
-        logger.info("Starting mission.")
-        for task in self.mission:
-            self.task = task
-
-            logging.info("Executing task '{0}'.".format(task))
-            while srr.util.elapsed_time() <= task.timeout:
-                if self.perform_task(task):
-                    break
-                else:
-                    time.sleep(1)
-        logger.info("Completed mission.")
+        self.perform_mission()
 
         self.perceptor.shutdown()
         self.navigator.shutdown()
         self.collector.shutdown()
         logger.info("Shutdown complete.")
+
+    def perform_mission(self):
+        """
+        Attempts to complete an entire mission.
+        """
+        logger.info("Mission started.")
+        for task in self.mission:
+            self.task = task
+            logging.info("Executing task '{0}'.".format(task.name))
+
+            while srr.util.elapsed_time() <= task.timeout:
+                if not self.is_running:
+                    logger.info("Mission aborted.")
+                    return
+
+                if self.perform_task(task):
+                    break
+                else:
+                    time.sleep(1)
+        logger.info("Mission completed.")
 
     def perform_task(self, task):
         """
