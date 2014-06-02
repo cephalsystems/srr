@@ -17,7 +17,7 @@ K_TURN = 50000
 K_DRIVE = 50000
 SPEED_LIMIT = 100000
 ACCEL_LIMIT = 10000
-WHEELBASE_WIDTH = 0.5  
+WHEELBASE_WIDTH = 0.5
 
 ORIGIN = shapely.geometry.Point
 
@@ -122,11 +122,38 @@ class Navigator(object):
         polar_goal = to_polar(goal)
         return from_polar(math.sqrt(polar_goal[0]), polar_goal[1])
 
+    def goto_home(self):
+        """
+        Go towards best guess of home position.
+        """
+        home = self.perceptor.home
+        beacon = self.perceptor.beacon
+
+        if home is not None:
+            if ORIGIN.distance(home) < 1:
+                return True
+            else:
+                self._goto_target(home)
+        elif beacon is not None:
+            self._goto_target(beacon)
+            return False
+        else:
+            # TODO: figure out where starting locatiom was.
+            start = ORIGIN
+            self._goto_target(start)
+            return False
+
     def _goto_target(self, point):
         """
         Internal function to drive directly to a target location.
         """
-        goal = self._compute_field(point, self.perceptor.obstacles)
+        obstacles = self.perceptor.obstacles
+
+        beacon = self.perceptor.beacon
+        if beacon is not None:
+            obstacles.append(beacon)
+
+        goal = self._compute_field(point, obstacles)
         distance, theta = to_polar(goal)
 
         # Divide the angle into 45 degree quadrants, reverse direction

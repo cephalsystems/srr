@@ -97,6 +97,9 @@ class MissionPlanner(object):
                     break
                 else:
                     time.sleep(1)
+
+        while not self.navigator.goto_home():
+            pass
         logger.info("Mission completed.")
 
     def perform_task(self, task):

@@ -62,8 +62,16 @@ class Perceptor(object):
     @property
     def home(self):
         """
-        Shapely point indicating the home platform position relative 
+        Shapely point indicating the home platform position relative
         to the rover local frame in meters, or None if it is not detected.
+        """
+        return shapely.geometry.Point(0, 0)
+
+    @property
+    def beacon(self):
+        """
+        Shapely point indicating the beacon position relative to the rover
+        local frame in meters, or None if it is not detected.
         """
         return shapely.geometry.Point(0, 0)
 
