@@ -3,13 +3,9 @@
 Launches and executes an SRR mission.
 """
 import argparse
-import flask
 import srr.util
 import srr.planning
 
-mission_planner = None
-
-# TODO: add Flask routes for KML stuff!
 
 if __name__ == "__main__":
     # Extract arguments from command line.
@@ -38,8 +34,9 @@ if __name__ == "__main__":
     mission_planner = srr.planning.MissionPlanner(args)
 
     # Start web server to publish live feeds of rover activity.
-    app = flask.Flask(__name__)
-    app.run()
+    import srr.viewer
+    srr.viewer.mission_planner = mission_planner
+    srr.viewer.run()
 
     # Shut down mission planner if server is stopped.
     mission_planner.shutdown()
