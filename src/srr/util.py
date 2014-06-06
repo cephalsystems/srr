@@ -12,6 +12,7 @@ import shapely.affinity
 
 LOG_FILENAME = 'srr.log'
 START_TIME = time.time()
+ORIGIN = shapely.geometry.Point(0, 0)
 
 
 def elapsed_time():
@@ -114,20 +115,46 @@ def local_to_global(origin, point, theta):
     Converts from a local frame in meters into a global frame in lon/lat.
 
     @param origin (lon, lat, heading)
-    @param point shapely.geometry.Point()
+    @param point shapely.geometry.Point() in local frame
     @return (longitude, latitude) in WGS84
     """
     # Create local transformation frame.
     import utm
     ox, oy, zone, hemi = utm.from_latlon(origin[0], origin[1])
-    origin_utm = shapely.geometry.Point(ox, oy)
-    origin_theta = math.pi - origin[2]
+    o_theta = math.pi - origin[2]
 
     # Translate and rotate point to origin.
-    point += origin_utm
-    point = shapely.affinity.rotate(point, origin_theta, origin=origin_utm)
-    heading = theta + origin_theta
+    point = shapely.affinity.rotate(point, o_theta, origin=ORIGIN)
+    point = shapely.affinity.translate(point, ox, oy)
+    p_theta = theta + o_theta
+    heading = math.pi/2.0 - p_theta
 
     # Return transformed point.
     lat, lon = utm.to_latlon(point.x, point.y, zone, hemi)
     return lon, lat, heading
+
+
+def global_to_local(origin, lon, lat, heading):
+    """
+    Converts from the WGS84 lon/lat global frame into the local
+    frame in meters.
+
+    @param origin (lon, lat, heading)
+    @return (longitude, latitude) in WGS84
+    """
+    # Create local transformation frame.
+    import utm
+    ox, oy, zone, hemi = utm.from_latlon(origin[0], origin[1])
+    o_theta = math.pi - origin[2]
+
+    # Convert global point into local frame.
+    px, py, zone, hemi = utm.from_latlon(lat, lon)
+    p_theta = math.pi/2.0 - heading
+
+    # Translate and rotate point to origin.
+    point = shapely.geometry.Point(px - ox, py - oy)
+    point = shapely.affinity.rotate(point, -o_theta, origin=ORIGIN)
+    theta = p_theta - o_theta
+
+    # Return transformed point.
+    return (point, theta)
