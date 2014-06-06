@@ -5,8 +5,10 @@ SRR configuration utility module.
 import logging
 import logging.handlers
 import time
+import math
 import sys
 import shapely.geometry
+import shapely.affinity
 
 LOG_FILENAME = 'srr.log'
 START_TIME = time.time()
@@ -105,3 +107,27 @@ def parse_mission(mission_yaml, environment):
     """
     return [Task(name, task_yaml, environment)
             for (name, task_yaml) in mission_yaml.iteritems()]
+
+
+def local_to_global(origin, point, theta):
+    """
+    Converts from a local frame in meters into a global frame in lon/lat.
+
+    @param origin (lon, lat, heading)
+    @param point shapely.geometry.Point()
+    @return (longitude, latitude) in WGS84
+    """
+    # Create local transformation frame.
+    import utm
+    ox, oy, zone, hemi = utm.from_latlon(origin[0], origin[1])
+    origin_utm = shapely.geometry.Point(ox, oy)
+    origin_theta = math.pi - origin[2]
+
+    # Translate and rotate point to origin.
+    point += origin_utm
+    point = shapely.affinity.rotate(point, origin_theta, origin=origin_utm)
+    heading = theta + origin_theta
+
+    # Return transformed point.
+    lat, lon = utm.to_latlon(point.x, point.y, zone, hemi)
+    return lon, lat, heading
