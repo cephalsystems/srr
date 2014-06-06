@@ -47,7 +47,15 @@ def environment_route():
                                      local_start[1],
                                      local_start[2])
 
-    # Create a KML document with this environment represented
+    # Compute bounds of environment.
+    bounds_list = []
+    for coord in list(mission_planner.environment.bounds.exterior.coords):
+        (lon, lat, heading) = srr.util.local_to_global(origin, coord[0],
+                                                       coord[1], 0)
+        bounds_list.append("{lon},{lat},{alt}".format(lon=lon, lat=lat, alt=0))
+        bounds = " ".join(bounds_list)
+
+    # Create a KML document with this environment represented.
     doc = KML.kml(
         KML.Document(
             KML.name("SRR Environment"),
@@ -56,14 +64,8 @@ def environment_route():
             KML.Placemark(
                 KML.name("Bounds"),
                 KML.LineString(
-                    KML.extrude(1),
-                    KML.coordinates(
-                        "146.825,12.233,400 "
-                        "146.820,12.222,400 "
-                        "146.812,12.212,400 "
-                        "146.796,12.209,400 "
-                        "146.788,12.205,400"
-                    )
+                    KML.extrude(1.2),
+                    KML.coordinates(bounds)
                 )
             )
         )
