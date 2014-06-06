@@ -66,6 +66,7 @@ class Task(object):
             self.location = self.bounds.centroid
         elif 'bounds' not in task_yaml:
             self.bounds = self.location
+            self.is_point = True
 
         self.is_forced = ('is_forced' in task_yaml) and task_yaml['is_forced']
         self.timeout = task_yaml['timeout']
