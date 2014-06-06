@@ -170,8 +170,6 @@ def to_world(local_origin, local_point):
     Converts a point from a local frame into a global frame.
     This is still all happening in the local world frame (UTM meters).
     """
-    print local_point
-    print local_origin
     global_point = shapely.affinity.rotate(local_point, local_origin[1])
     global_point = shapely.affinity.translate(global_point,
                                               local_origin[0].x,

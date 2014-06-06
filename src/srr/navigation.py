@@ -57,6 +57,9 @@ class Navigator(object):
                                                environment.start[1])
         self.rotation = environment.start[2]
 
+        # Set no current goal
+        self.goal = None
+
         # Connect to drivetrain Roboclaw.
         self.motors = roboclaw.Roboclaw(args.motor_port)
 
@@ -155,8 +158,8 @@ class Navigator(object):
         if beacon is not None:
             obstacles.append(beacon)
 
-        goal = self._compute_safe_target(point, obstacles)
-        distance, theta = to_polar(goal)
+        self.goal = self._compute_safe_target(point, obstacles)
+        distance, theta = to_polar(self.goal)
 
         # Create speeds based on proportional heuristic.
         forward_speed = K_DRIVE * math.cos(theta) * distance

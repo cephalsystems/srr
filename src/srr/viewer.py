@@ -47,7 +47,7 @@ def frame_placemark(origin, name, x, y, theta=0.0, marker='axes.png'):
                 KML.heading(frame[2]),
                 KML.Icon(
                     KML.href(flask.url_for('static',
-                                           filename='axes.png',
+                                           filename=marker,
                                            _external=True)),
                     ),
                 KML.hotSpot(x="0.5", y="0.5",
@@ -193,12 +193,20 @@ def navigation_route():
     rover_position = mission_planner.navigator.position
     rover_rotation = mission_planner.navigator.rotation
     rover_location = (rover_position, rover_rotation)
+    goal = mission_planner.navigator.goal
     kml_list = [KML.name("SRR Navigation")]
 
     # Add placemark for rover location estimate.
     kml_list.append(frame_placemark(
         origin, "Rover", rover_position.x, rover_position.y, rover_rotation,
         marker='rover.png'))
+
+    # Add placemark for navigation goal.
+    if goal is not None:
+        global_goal = srr.util.to_world(rover_location, goal)
+        kml_list.append(frame_placemark(
+            origin, "Goal", global_goal.x, global_goal.y,
+            marker='axes.png'))
 
     # Create a KML document with this environment represented.
     doc = KML.kml(
