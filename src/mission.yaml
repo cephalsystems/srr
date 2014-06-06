@@ -1,11 +1,11 @@
 # Mission specification example.
 environment:
   origin:
-    # Absolute location in latitude/longitude/heading (degrees) ]
-    [ 41.00, -81.00, 90 ]
+    # Absolute location in longitude/latitude/heading (degrees) ]
+    [ -81.00, 41.00, 90 ]
 
   start:
-    [ 0, 0, 0 ]
+    [ 10, 5, 0 ]
   bounds:
     - [  0,  0 ]
     - [ 21, 20 ]

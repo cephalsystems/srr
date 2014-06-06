@@ -110,24 +110,26 @@ def parse_mission(mission_yaml, environment):
             for (name, task_yaml) in mission_yaml.iteritems()]
 
 
-def local_to_global(origin, point, theta):
+def local_to_global(origin, x, y, theta):
     """
     Converts from a local frame in meters into a global frame in lon/lat.
+    Note that heading is in degrees!
 
     @param origin (lon, lat, heading)
     @param point shapely.geometry.Point() in local frame
-    @return (longitude, latitude) in WGS84
+    @return (longitude, latitude, heading) in WGS84
     """
     # Create local transformation frame.
     import utm
-    ox, oy, zone, hemi = utm.from_latlon(origin[0], origin[1])
-    o_theta = math.pi - origin[2]
+    ox, oy, zone, hemi = utm.from_latlon(origin[1], origin[0])
+    o_theta = (90 - origin[2]) * (math.pi/180.0)
 
     # Translate and rotate point to origin.
+    point = shapely.geometry.Point(x, y)
     point = shapely.affinity.rotate(point, o_theta, origin=ORIGIN)
     point = shapely.affinity.translate(point, ox, oy)
     p_theta = theta + o_theta
-    heading = math.pi/2.0 - p_theta
+    heading = 90 - (p_theta * 180.0/math.pi)
 
     # Return transformed point.
     lat, lon = utm.to_latlon(point.x, point.y, zone, hemi)
@@ -137,15 +139,15 @@ def local_to_global(origin, point, theta):
 def global_to_local(origin, lon, lat, heading):
     """
     Converts from the WGS84 lon/lat global frame into the local
-    frame in meters.
+    frame in meters.  Note that heading is in degrees!
 
     @param origin (lon, lat, heading)
-    @return (longitude, latitude) in WGS84
+    @return (x, y, theta) in WGS84
     """
     # Create local transformation frame.
     import utm
-    ox, oy, zone, hemi = utm.from_latlon(origin[0], origin[1])
-    o_theta = math.pi - origin[2]
+    ox, oy, zone, hemi = utm.from_latlon(origin[1], origin[0])
+    o_theta = (90 - origin[2]) * (math.pi/180.0)
 
     # Convert global point into local frame.
     px, py, zone, hemi = utm.from_latlon(lat, lon)
@@ -157,4 +159,4 @@ def global_to_local(origin, lon, lat, heading):
     theta = p_theta - o_theta
 
     # Return transformed point.
-    return (point, theta)
+    return point.x, point.y, theta
