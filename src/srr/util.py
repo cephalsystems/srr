@@ -126,7 +126,8 @@ def local_to_global(origin, x, y, theta):
 
     # Translate and rotate point to origin.
     point = shapely.geometry.Point(x, y)
-    point = shapely.affinity.rotate(point, o_theta, origin=ORIGIN)
+    point = shapely.affinity.rotate(point, o_theta,
+                                    origin=ORIGIN, use_radians=True)
     point = shapely.affinity.translate(point, ox, oy)
     p_theta = theta + o_theta
     heading = 90 - (p_theta * 180.0/math.pi)
@@ -155,7 +156,8 @@ def global_to_local(origin, lon, lat, heading):
 
     # Translate and rotate point to origin.
     point = shapely.geometry.Point(px - ox, py - oy)
-    point = shapely.affinity.rotate(point, -o_theta, origin=ORIGIN)
+    point = shapely.affinity.rotate(point, -o_theta,
+                                    origin=ORIGIN, use_radians=True)
     theta = p_theta - o_theta
 
     # Return transformed point.

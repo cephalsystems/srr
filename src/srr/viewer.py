@@ -10,7 +10,6 @@ mission_planner = None
 
 
 def frame_placemark(name, lon, lat, heading):
-    print(flask.url_for('static', filename='axes.gif', _external=True))
     return KML.Placemark(
         KML.name(name),
         KML.Point(
@@ -19,14 +18,17 @@ def frame_placemark(name, lon, lat, heading):
             ),
         KML.Style(
             KML.IconStyle(
-                KML.scale(1.0),
+                KML.scale(5.0),
                 KML.heading(heading),
                 KML.Icon(
                     KML.href(flask.url_for('static',
-                                           filename='axes.gif',
+                                           filename='axes.png',
                                            _external=True)),
                     ),
-                )
+                KML.hotSpot(x="0.5", y="0.5",
+                            xunits="fraction",
+                            yunits="fraction")
+                ),
             )
         )
 
@@ -37,6 +39,7 @@ def environment_route():
     Flask route that dynamically generates a KML of the current environment
     as specified in the mission YAML.
     """
+    # Compute origin and start location.
     origin = mission_planner.environment.origin
     local_start = mission_planner.environment.start
     start = srr.util.local_to_global(origin,
@@ -44,6 +47,7 @@ def environment_route():
                                      local_start[1],
                                      local_start[2])
 
+    # Create a KML document with this environment represented
     doc = KML.kml(
         KML.Document(
             KML.name("SRR Environment"),
