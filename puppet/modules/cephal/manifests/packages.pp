@@ -37,6 +37,7 @@ class cephal::packages {
                     'pep8',
                     'autopep8',
                     # SRC build dependencies
+                    'utm',
                     'pykml',
                     'flask',
                     'shapely',
