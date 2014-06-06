@@ -4,6 +4,7 @@ import time
 import threading
 import roboclaw
 import shapely.geometry
+import shapely.affinity
 import logging
 logger = logging.getLogger('navigation')
 
@@ -15,11 +16,12 @@ MAX_DISTANCE = 10.0
 # Driving constants.
 K_TURN = 50000
 K_DRIVE = 50000
-SPEED_LIMIT = 100000
-ACCEL_LIMIT = 10000
+SPEED_MIN = 20000
+SPEED_MAX = 100000
+ACCEL_MAX = 10000
 WHEELBASE_WIDTH = 0.5
 
-ORIGIN = shapely.geometry.Point
+ORIGIN = shapely.geometry.Point(0, 0)
 
 
 def clamp(value, minimum, maximum):
@@ -111,14 +113,14 @@ class Navigator(object):
 
         # Attractive force for the target.
         polar_target = to_polar(target)
-        polar_target[0] = max(polar_target[0], MAX_DISTANCE)
+        polar_target = (max(polar_target[0], MAX_DISTANCE), polar_target[1])
         forces.append(from_polar(K_TARGET*polar_target[0]*polar_target[0],
                                  polar_target[1]))
 
         # Compute goal from these forces.
         goal = ORIGIN
         for force in forces:
-            goal = goal + force
+            goal = shapely.affinity.translate(goal, force.x, force.y)
         polar_goal = to_polar(goal)
         return from_polar(math.sqrt(polar_goal[0]), polar_goal[1])
 
@@ -153,32 +155,21 @@ class Navigator(object):
         if beacon is not None:
             obstacles.append(beacon)
 
-        goal = self._compute_field(point, obstacles)
+        goal = self._compute_safe_target(point, obstacles)
         distance, theta = to_polar(goal)
-
-        # Divide the angle into 45 degree quadrants, reverse direction
-        # each quadrant (to produce fake 'parallel' parking turns).
-        if (abs(theta) > 3.0*math.pi/4.0):
-            direction = -1
-        elif (abs(theta) > math.pi/2.0):
-            direction = 1
-        elif (abs(theta) > math.pi/4.0):
-            direction = -1
-        else:
-            direction = 1
 
         # Create speeds based on proportional heuristic.
         forward_speed = K_DRIVE * math.cos(theta) * distance
         turn_speed = K_TURN * (1.0 / (1.0 + math.exp(-2.0*theta)))  # Logistic
 
         # Combine turning and forward terms to get motor speed.
-        v1 = direction * (forward_speed - turn_speed)
-        v2 = direction * (forward_speed + turn_speed)
+        v1 = forward_speed - turn_speed
+        v2 = forward_speed + turn_speed
 
         # Limit velocities to reasonable range.
-        v1 = clamp(v1, -SPEED_LIMIT, SPEED_LIMIT)
-        v2 = clamp(v1, -SPEED_LIMIT, SPEED_LIMIT)
-        self.motors.mixed_set_speed_accel(ACCEL_LIMIT, v1, v2)
+        v1 = clamp(v1, -SPEED_MAX, SPEED_MAX)
+        v2 = clamp(v1, -SPEED_MAX, SPEED_MAX)
+        self.motors.mixed_set_speed_accel(ACCEL_MAX, v1, v2)
 
     def main(self):
         """
