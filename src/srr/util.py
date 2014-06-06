@@ -111,7 +111,7 @@ def parse_mission(mission_yaml, environment):
             for (name, task_yaml) in mission_yaml.iteritems()]
 
 
-def local_to_global(origin, x, y, theta):
+def local_to_global(origin, x, y, theta=0.0):
     """
     Converts from a local frame in meters into a global frame in lon/lat.
     Note that heading is in degrees!
@@ -138,7 +138,7 @@ def local_to_global(origin, x, y, theta):
     return lon, lat, heading
 
 
-def global_to_local(origin, lon, lat, heading):
+def global_to_local(origin, lon, lat, heading=0.0):
     """
     Converts from the WGS84 lon/lat global frame into the local
     frame in meters.  Note that heading is in degrees!
@@ -163,3 +163,29 @@ def global_to_local(origin, lon, lat, heading):
 
     # Return transformed point.
     return point.x, point.y, theta
+
+
+def to_world(local_origin, local_point):
+    """
+    Converts a point from a local frame into a global frame.
+    This is still all happening in the local world frame (UTM meters).
+    """
+    print local_point
+    print local_origin
+    global_point = shapely.affinity.rotate(local_point, local_origin[1])
+    global_point = shapely.affinity.translate(global_point,
+                                              local_origin[0].x,
+                                              local_origin[0].y)
+    return global_point
+
+
+def to_local(local_origin, global_point):
+    """
+    Converts a point from a global frame into a local frame.
+    This is still all happening in the local world frame (UTM meters).
+    """
+    local_point = shapely.affinity.translate(global_point,
+                                             -local_origin[0].x,
+                                             -local_origin[0].y)
+    local_point = shapely.affinity.rotate(local_point, -local_origin[1])
+    return local_point
