@@ -36,6 +36,13 @@ def extractNodeCircles(grayim, colorThresh, radThresh, fillThresh):
 			ret.append((cmx, cmy, rad))
 	return ret, retbinimg
 
+def do_bloom_marker_detection(srcimg, graythresh, radthresh, fillthresh):
+	grayim = cv2.cvtColor(srcimg, cv2.cv.CV_RGB2GRAY)
+	nodes, binimg = extractNodeCircles(grayim, graythresh, radthresh, fillthresh)
+	tarimg = cv2.merge([binimg, binimg, binimg])
+	drawExtractedNodes(tarimg, nodes, (255,255,0))
+	return (nodes, tarimg)
+
 if __name__ == '__main__':
 	srcimg = cv2.imread(sys.argv[1])
 	graythresh = int(sys.argv[2])

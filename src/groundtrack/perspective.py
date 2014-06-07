@@ -81,14 +81,27 @@ class PerspectiveCorrector:
         R = rot_x(self.angle)
         B = world_to_camera(self.f, self.srcsize[1], self.srcsize[0])
         ret = B.dot(R.dot(A))
-        return np.linalg.inv(ret)
+        return (np.linalg.inv(ret), ret)
 
     def get_transform(self):
         # only rebuild if it doesn't exist
         if not self.tf:
-            self.tf = self.build_transform()
+            self.tf, self.inv_tf = self.build_transform()
 
         return self.tf
+
+    def get_inv_transform(self):
+        # only rebuild if it doesn't exist
+        if not self.tf:
+            self.tf, self.inv_tf = self.build_transform()
+
+        return self.inv_tf
+
+    def image_coords_to_plane(self, coords):
+        temptf = self.get_inv_transform()
+        tcoords = temptf.dot(coords)
+        tcoords /= tcoords[2,:]
+        return tcoords
 
     def apply(self, srcim):
         tf = self.get_transform()
