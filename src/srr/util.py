@@ -108,7 +108,7 @@ def parse_mission(mission_yaml, environment):
     Parse raw YAML mission.
     """
     return [Task(name, task_yaml, environment)
-            for (name, task_yaml) in mission_yaml.iteritems()]
+            for (name, task_yaml) in mission_yaml]
 
 
 def local_to_global(origin, x, y, theta=0.0):
