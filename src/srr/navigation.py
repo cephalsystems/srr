@@ -9,8 +9,8 @@ import logging
 logger = logging.getLogger('navigation')
 
 # Potential field constants.
-K_OBS = 10.0
-K_TARGET = 1.0
+K_OBS = 1e2
+K_TARGET = 1e2
 MAX_DISTANCE = 10.0
 
 # Driving constants.
@@ -110,22 +110,29 @@ class Navigator(object):
         Computes new vector target using quadratic potential fields to
         avoid obstacles.
         """
+        forces = []
+
+        # Repelling force for obstacles.
         polar_obstacles = [to_polar(obstacle) for obstacle in obstacles]
-        forces = [from_polar(-K_OBS*distance*distance, angle)
-                  for (distance, angle) in polar_obstacles]
+        forces += [from_polar(-K_OBS*1.0/(obstacle_distance *
+                                          obstacle_distance + 1e-6),
+                              obstacle_angle)
+                   for (obstacle_distance, obstacle_angle) in polar_obstacles]
 
         # Attractive force for the target.
-        polar_target = to_polar(target)
-        polar_target = (max(polar_target[0], MAX_DISTANCE), polar_target[1])
-        forces.append(from_polar(K_TARGET*polar_target[0]*polar_target[0],
-                                 polar_target[1]))
+        target_distance, target_angle = to_polar(target)
+        target_distance = min(target_distance, MAX_DISTANCE)
+        forces.append(from_polar(K_TARGET*1.0/(target_distance *
+                                               target_distance + 1e-6),
+                                 target_angle))
 
         # Compute goal from these forces.
         goal = ORIGIN
         for force in forces:
             goal = shapely.affinity.translate(goal, force.x, force.y)
-        polar_goal = to_polar(goal)
-        return from_polar(math.sqrt(polar_goal[0]), polar_goal[1])
+        goal_distance, goal_angle = to_polar(goal)
+        goal_distance = min(goal_distance, MAX_DISTANCE)
+        return from_polar(goal_distance, goal_angle)
 
     def goto_home(self):
         """
