@@ -182,6 +182,39 @@ static PyObject* PygrayCamera_setvideomode(pygray_CameraObject* self,
 	Py_RETURN_NONE;
 }
 
+static PyObject* PygrayCamera_setframerate(pygray_CameraObject* self,
+	PyObject* args) {
+
+	if(self->cam) {
+		float framerate;
+		if (! PyArg_ParseTuple(args, "f", &framerate) )
+		{
+			Py_RETURN_NONE;
+		}
+		Error error;
+
+		Property prop;
+		prop.type = FRAME_RATE;
+
+		error = self->cam->GetProperty(&prop);
+		if(error != PGRERROR_OK) {
+			doCameraError(error);
+			return NULL;
+		}
+
+		std::cout << "VA: " << prop.valueA << ", VB: " << prop.valueB << " absv: " << prop.absValue << std::endl;
+		prop.absValue = framerate;
+
+		error = self->cam->SetProperty(&prop);
+		if(error != PGRERROR_OK) {
+			doCameraError(error);
+			return NULL;
+		}
+	}
+
+	Py_RETURN_NONE;
+}
+
 static PyObject* PygrayCamera_start(pygray_CameraObject* self) {
 	if(self->cam) {
 		Error error = self->cam->StartCapture();
@@ -272,6 +305,8 @@ static PyMethodDef PygrayCamera_methods[] = {
 	 "Set whether to return color images."},
 	{"setvideomode", (PyCFunction)PygrayCamera_setvideomode, METH_VARARGS,
 	 "Set the camera resolution and framerate."},
+	 {"setframerate", (PyCFunction)PygrayCamera_setframerate, METH_VARARGS,
+	 "Set the camera framerate."},
 	{NULL}  /* Sentinel */
 };
 
