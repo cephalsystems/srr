@@ -1,0 +1,26 @@
+# Mission specification example.
+environment:
+  origin:
+    # Absolute location in longitude/latitude/heading (degrees) ]
+    [ -81.00, 41.00, 90 ]
+
+  start:
+    [ 10, 5, 0 ]
+  bounds:
+    - [  0,  0 ]
+    - [ 21, 20 ]
+    - [-20, 20 ]
+  obstacles:
+    rock:
+      - [  10, 10 ]
+      - [ -10, 10 ]
+      - [  10,-10 ]
+mission: !!omap
+  # List of objectives to be executed IN ORDER.
+  - initial_sample: 
+      # Each objective can have a position, a bounds, and a timeout.
+      location: [ 21, 20 ]
+      timeout: 24
+  - explore_a_bit:
+      location: [ 23, 20 ]
+      timeout: 26
