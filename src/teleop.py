@@ -8,12 +8,27 @@ A - Left
 D - Right
 Q - Left-Forward
 E - Right Forward
+] - Scoop ON
+[ - Scoop OFF
+> - Lift UP
+< - Lift DOWN
+/ - Lift STOP
+) - Bagger ON
+( - Bagger OFF
+* - Bagger REV
 """
 import sys, tty, termios
 import roboclaw
 
 if __name__ == '__main__':
-    r = roboclaw.Roboclaw(sys.argv[1])
+    # Drivetrain
+    r = roboclaw.Roboclaw('/dev/serial/by-path/pci-0000:00:14.0-usb-0:4:1.0')
+
+    # Lift and Bag
+    c = roboclaw.Roboclaw('/dev/serial/by-path/pci-0000:04:00.0-usb-0:1:1.0')
+
+    # Scoop
+    s = roboclaw.Roboclaw('/dev/serial/by-path/pci-0000:04:00.0-usb-0:2:1.0')
     
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
@@ -47,6 +62,36 @@ if __name__ == '__main__':
             elif ch == 'c':
                 print "Backwards Right\r\n"
                 r.mixed_set_speed(-80000, -60000)
+            elif ch == '[':
+                print "Scoop OFF\r\n"
+                s.m1_forward(0)
+            elif ch == ']':
+                print "Scoop ON\r\n"
+                s.m1_forward(64)
+            elif ch == '.':
+                print "Lift UP\r\n"
+                print str(c.m1_encoder) + '\r\n'
+                c.m1_forward(120)
+            elif ch == ',':
+                print "Lift DOWN\r\n"
+                print str(c.m1_encoder) + '\r\n'
+                c.m1_backward(90)
+            elif ch == '/':
+                print "Lift STOP\r\n"
+                print str(c.m1_encoder) + '\r\n'
+                c.m1_forward(0)
+            elif ch == '0':
+                print "Bagger ON\r\n"
+                print str(c.m2_encoder) + '\r\n'
+                c.m2_forward(80)
+            elif ch == '9':
+                print "Bagger OFF\r\n"
+                print str(c.m2_encoder) + '\r\n'
+                c.m2_forward(0)
+            elif ch == '8':
+                print "Bagger REV\r\n"
+                print str(c.m2_encoder) + '\r\n'
+                c.m2_backward(64)
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         
