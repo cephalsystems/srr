@@ -88,6 +88,7 @@ class MissionPlanner(object):
             self.task = task
             logging.info("Executing task '{0}'.".format(task.name))
 
+            # Try to complete this task until the timeout.
             while srr.util.elapsed_time() <= task.timeout:
                 if not self.is_running:
                     logger.info("Mission aborted.")
@@ -98,8 +99,21 @@ class MissionPlanner(object):
                 else:
                     time.sleep(1)
 
+        # Report that we are giving up and going home.
+        if srr.util.elapsed_time() > task.timeout:
+            logger.info("Aborting tasks, going home.")
+        else:
+            logger.info("Completed tasks, going home.")
+
+        # Spend the rest of the time trying to go home.
         while not self.navigator.goto_home():
-            pass
+            if not self.is_running:
+                logger.info("Mission aborted.")
+                return
+            time.sleep(1)
+
+        # Shut down everything and complete mission.
+        self.navigator.stop()
         logger.info("Mission completed.")
 
     def perform_task(self, task):

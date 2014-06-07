@@ -88,6 +88,12 @@ class Navigator(object):
         """
         return self.position.x, self.position.y, self._rotation
 
+    def stop(self):
+        """
+        Immediately stop the vehicle.
+        """
+        self.motors.mixed_forward(0.0)
+
     def goto_angle(self, theta):
         """
         Navigate toward a specified angle in the local frame.

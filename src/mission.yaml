@@ -20,7 +20,7 @@ mission:
   initial_sample: 
     # Each objective can have a position, a bounds, and a timeout.
     location: [ 21, 20 ]
-    timeout: 240 
+    timeout: 24
   explore_a_bit:
     location: [ 23, 20 ]
-    timeout: 260
+    timeout: 26

@@ -26,7 +26,7 @@ def elapsed_time():
 class StartupTimeFormatter(logging.Formatter):
     def formatTime(self, record, datefmt=None):
         global START_TIME
-        return "{:03.3}".format(record.created - START_TIME)
+        return "{:7.2f}".format(record.created - START_TIME)
 
 
 def setup_logging():
