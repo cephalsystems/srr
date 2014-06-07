@@ -7,6 +7,7 @@ app = flask.Flask(__name__)
 import srr.util
 
 mission_planner = None
+DEFAULT_HEIGHT = 50
 
 
 def point_placemark(origin, name, x, y):
@@ -14,6 +15,16 @@ def point_placemark(origin, name, x, y):
 
     return KML.Placemark(
         KML.name(name),
+        KML.LookAt(
+            KML.longitude(point[0]),
+            KML.latitude(point[1]),
+            KML.altitude(0),
+            KML.heading(origin[2]),
+            KML.tilt(0),
+            KML.roll(0),
+            KML.altitudeMode("relativeToGround"),
+            KML.range(DEFAULT_HEIGHT)
+        ),
         KML.Point(
             KML.coordinates("{lon},{lat},{alt}".format(
                 lon=point[0], lat=point[1], alt=0)),
@@ -21,18 +32,19 @@ def point_placemark(origin, name, x, y):
         )
 
 
-def points_placemark(origin, name, local_origin, points):
+def points_placemark(origin, name, local_origin, points, **kwargs):
     point_list = [KML.name(name)]
 
     for point in points:
         world_target = srr.util.to_world(local_origin, point)
-        point_list.append(point_placemark(
-            origin, "", world_target.x, world_target.y))
+        point_list.append(frame_placemark(
+            origin, "", world_target.x, world_target.y, **kwargs))
 
     return KML.Folder(*point_list)
 
 
-def frame_placemark(origin, name, x, y, theta=0.0, marker='axes.png'):
+def frame_placemark(origin, name, x, y, theta=0.0,
+                    marker='axes.png', scale=1.0, color='ffffffff'):
     frame = srr.util.local_to_global(origin, x, y, theta)
 
     return KML.Placemark(
@@ -41,10 +53,21 @@ def frame_placemark(origin, name, x, y, theta=0.0, marker='axes.png'):
             KML.coordinates("{lon},{lat},{alt}".format(
                 lon=frame[0], lat=frame[1], alt=0)),
             ),
+        KML.LookAt(
+            KML.longitude(frame[0]),
+            KML.latitude(frame[1]),
+            KML.altitude(0),
+            KML.heading(frame[2]),
+            KML.tilt(0),
+            KML.roll(0),
+            KML.altitudeMode("relativeToGround"),
+            KML.range(DEFAULT_HEIGHT)
+        ),
         KML.Style(
             KML.IconStyle(
-                KML.scale(5.0),
+                KML.scale(scale),
                 KML.heading(frame[2]),
+                KML.color(color),
                 KML.Icon(
                     KML.href(flask.url_for('static',
                                            filename=marker,
@@ -112,8 +135,10 @@ def mission_route():
 
     # Add placemarks for each mission waypoint.
     for task in mission_planner.mission:
-        kml_list.append(point_placemark(origin, task.name,
-                                        task.location.x, task.location.y))
+        kml_list.append(frame_placemark(origin, task.name,
+                                        task.location.x, task.location.y,
+                                        marker='waypoint.png',
+                                        color='ffff0000'))
         if not task.is_point:
             kml_list.append(
                 bounds_placemark(origin, task.name + " bounds", task.bounds))
@@ -153,25 +178,27 @@ def perception_route():
 
     # Add placemark for currently estimated targets.
     kml_list.append(points_placemark(
-        origin, "Targets", rover_location, targets))
+        origin, "Targets", rover_location, targets,
+        marker='target.png', color='ff00ffff'))
 
     # Add placemark for currently estimated obstacles.
     kml_list.append(points_placemark(
-        origin, "Obstacles", rover_location, obstacles))
+        origin, "Obstacles", rover_location, obstacles,
+        marker='rock.png', color='ff0000ff'))
 
     # Add placemark for home location.
     if home is not None:
         global_home = srr.util.to_world(rover_location, home)
         kml_list.append(frame_placemark(
             origin, "Home", global_home.x, global_home.y,
-            marker='axes.png'))
+            marker='home.png', color='ffffff00'))
 
     # Add placemark for beacon location.
     if beacon is not None:
         global_beacon = srr.util.to_world(rover_location, beacon)
         kml_list.append(frame_placemark(
             origin, "Beacon", global_beacon.x, global_beacon.y,
-            marker='axes.png'))
+            marker='beacon.png', color='ffffff00'))
 
     # Create a KML document with this environment represented.
     doc = KML.kml(
@@ -206,7 +233,7 @@ def navigation_route():
         global_goal = srr.util.to_world(rover_location, goal)
         kml_list.append(frame_placemark(
             origin, "Goal", global_goal.x, global_goal.y,
-            marker='axes.png'))
+            marker='goal.png', color='ff00ffff'))
 
     # Create a KML document with this environment represented.
     doc = KML.kml(
