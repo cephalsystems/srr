@@ -166,7 +166,13 @@ static PyObject* PygrayCamera_setvideomode(pygray_CameraObject* self,
 			Py_RETURN_NONE;
 		}
 		Error error;
-		error = self->cam->SetVideoModeAndFrameRate(videoMode, framerateMode);
+
+		VideoMode prevVideoMode;
+		FrameRate prevFramerate;
+		self->cam->GetVideoModeAndFrameRate(&prevVideoMode, &prevFramerate);
+		std::cout << "PVM: " << prevVideoMode << ", PFR: " << prevFramerate << std::endl;
+
+		error = self->cam->SetVideoModeAndFrameRate((VideoMode)videoMode, (FrameRate)framerateMode);
 		if(error != PGRERROR_OK) {
 			doCameraError(error);
 			return NULL;
@@ -397,7 +403,7 @@ static PyMethodDef PygrayMethods[] = {
 void addIntConstant(PyObject* dest, const char* constName, unsigned int constVal) 
 {
 	PyObject* tempVal = Py_BuildValue("i", constVal);	
-	PyModule_AddObject(dest, constName, tempval);
+	PyModule_AddObject(dest, constName, tempVal);
 }
 
 void addFramerateEnumerations(PyObject* dest) 
