@@ -39,9 +39,10 @@ def setup_logging():
 
     # Set up rolling log files for root logger.
     file_handler = logging.handlers.RotatingFileHandler(LOG_FILENAME,
-                                                        backupCount=20)
+                                                        backupCount=10)
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
+    file_handler.doRollover()
     root_logger.addHandler(file_handler)
 
     # Set up logging to stdout for root logger.
