@@ -15,12 +15,12 @@ environment:
       - [  10, 10 ]
       - [ -10, 10 ]
       - [  10,-10 ]
-mission:
+mission: !!omap
   # List of objectives to be executed IN ORDER.
-  initial_sample: 
-    # Each objective can have a position, a bounds, and a timeout.
-    location: [ 21, 20 ]
-    timeout: 240 
-  explore_a_bit:
-    location: [ 23, 20 ]
-    timeout: 260
+  - initial_sample: 
+      # Each objective can have a position, a bounds, and a timeout.
+      location: [ 21, 20 ]
+      timeout: 24
+  - explore_a_bit:
+      location: [ 23, 20 ]
+      timeout: 26

@@ -48,7 +48,7 @@ class Perceptor(object):
         List of obstacles, specified as shapely.Point(x.y) tuples in the
         rover local frame in meters.
         """
-        return [shapely.geometry.Point(10, 10),
+        return [shapely.geometry.Point(7, 5),
                 shapely.geometry.Point(-10, 10)]
 
     @property
@@ -65,7 +65,7 @@ class Perceptor(object):
         Shapely point indicating the home platform position relative
         to the rover local frame in meters, or None if it is not detected.
         """
-        return shapely.geometry.Point(0, 0)
+        return shapely.geometry.Point(3, 3)
 
     @property
     def beacon(self):
@@ -73,7 +73,7 @@ class Perceptor(object):
         Shapely point indicating the beacon position relative to the rover
         local frame in meters, or None if it is not detected.
         """
-        return shapely.geometry.Point(0, 0)
+        return shapely.geometry.Point(10, -10)
 
     def main(self):
         """

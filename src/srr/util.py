@@ -26,7 +26,7 @@ def elapsed_time():
 class StartupTimeFormatter(logging.Formatter):
     def formatTime(self, record, datefmt=None):
         global START_TIME
-        return "{:03.3}".format(record.created - START_TIME)
+        return "{:7.2f}".format(record.created - START_TIME)
 
 
 def setup_logging():
@@ -39,9 +39,10 @@ def setup_logging():
 
     # Set up rolling log files for root logger.
     file_handler = logging.handlers.RotatingFileHandler(LOG_FILENAME,
-                                                        backupCount=20)
+                                                        backupCount=10)
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
+    file_handler.doRollover()
     root_logger.addHandler(file_handler)
 
     # Set up logging to stdout for root logger.
@@ -66,6 +67,7 @@ class Task(object):
             self.location = self.bounds.centroid
         elif 'bounds' not in task_yaml:
             self.bounds = self.location
+            self.is_point = True
 
         self.is_forced = ('is_forced' in task_yaml) and task_yaml['is_forced']
         self.timeout = task_yaml['timeout']
@@ -107,10 +109,10 @@ def parse_mission(mission_yaml, environment):
     Parse raw YAML mission.
     """
     return [Task(name, task_yaml, environment)
-            for (name, task_yaml) in mission_yaml.iteritems()]
+            for (name, task_yaml) in mission_yaml]
 
 
-def local_to_global(origin, x, y, theta):
+def local_to_global(origin, x, y, theta=0.0):
     """
     Converts from a local frame in meters into a global frame in lon/lat.
     Note that heading is in degrees!
@@ -137,7 +139,7 @@ def local_to_global(origin, x, y, theta):
     return lon, lat, heading
 
 
-def global_to_local(origin, lon, lat, heading):
+def global_to_local(origin, lon, lat, heading=0.0):
     """
     Converts from the WGS84 lon/lat global frame into the local
     frame in meters.  Note that heading is in degrees!
@@ -162,3 +164,27 @@ def global_to_local(origin, lon, lat, heading):
 
     # Return transformed point.
     return point.x, point.y, theta
+
+
+def to_world(local_origin, local_point):
+    """
+    Converts a point from a local frame into a global frame.
+    This is still all happening in the local world frame (UTM meters).
+    """
+    global_point = shapely.affinity.rotate(local_point, local_origin[1])
+    global_point = shapely.affinity.translate(global_point,
+                                              local_origin[0].x,
+                                              local_origin[0].y)
+    return global_point
+
+
+def to_local(local_origin, global_point):
+    """
+    Converts a point from a global frame into a local frame.
+    This is still all happening in the local world frame (UTM meters).
+    """
+    local_point = shapely.affinity.translate(global_point,
+                                             -local_origin[0].x,
+                                             -local_origin[0].y)
+    local_point = shapely.affinity.rotate(local_point, -local_origin[1])
+    return local_point
