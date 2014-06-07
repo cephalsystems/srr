@@ -155,6 +155,27 @@ static PyObject* PygrayCamera_setcolormode(pygray_CameraObject* self,
 	Py_RETURN_NONE;
 }
 
+static PyObject* PygrayCamera_setvideomode(pygray_CameraObject* self,
+	PyObject* args) {
+
+	if(self->cam) {
+		int videoMode = 0;
+		int framerateMode = 0;
+		if (! PyArg_ParseTuple(args, "ii", &videoMode, &framerateMode) )
+		{
+			Py_RETURN_NONE;
+		}
+		Error error;
+		error = self->cam->SetVideoModeAndFrameRate(videoMode, framerateMode);
+		if(error != PGRERROR_OK) {
+			doCameraError(error);
+			return NULL;
+		}
+	}
+
+	Py_RETURN_NONE;
+}
+
 static PyObject* PygrayCamera_start(pygray_CameraObject* self) {
 	if(self->cam) {
 		Error error = self->cam->StartCapture();
@@ -243,6 +264,8 @@ static PyMethodDef PygrayCamera_methods[] = {
 	 "Get information about the camera."},
 	{"setcolormode", (PyCFunction)PygrayCamera_setcolormode, METH_VARARGS,
 	 "Set whether to return color images."},
+	{"setvideomode", (PyCFunction)PygrayCamera_setvideomode, METH_VARARGS,
+	 "Set the camera resolution and framerate."},
 	{NULL}  /* Sentinel */
 };
 
@@ -313,6 +336,18 @@ pygray_version(PyObject *self, PyObject *args)
 	return Py_BuildValue("s", versionString.c_str());
 }
 
+static PyObject* pygray_startsynccapture(PyObject* self, PyObject* args)
+{
+	// todo
+	Py_RETURN_NONE;
+}
+
+static PyObject* pygray_stopsynccapture(PyObject* self, PyObject* args)
+{
+	// todo
+	Py_RETURN_NONE;
+}
+
 static PyObject *
 pygray_listcams(PyObject *self, PyObject *args)
 {
@@ -352,12 +387,56 @@ static PyMethodDef PygrayMethods[] = {
 	 "Return the flycapture sdk version as a string."},
 	{"listcams", pygray_listcams, METH_VARARGS,
 	 "Get a list of connected cameras."},
+	{"start_sync_capture", pygray_startsynccapture, METH_VARARGS,
+	 "Start synchronized capture between multiple cameras."},
+	{"stop_capture", pygray_stopsynccapture, METH_VARARGS,
+	 "Stop all capturing?."},
 	{NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
 #ifndef PyMODINIT_FUNC	/* declarations for DLL import/export */
 #define PyMODINIT_FUNC void
 #endif
+
+void addIntConstant(PyObject* dest, const char* constName, unsigned int constVal) 
+{
+	PyObject* tempVal = Py_BuildValue("i", constVal);	
+	PyModule_AddObject(dest, constName, tempval);
+}
+
+void addFramerateEnumerations(PyObject* dest) 
+{
+	addIntConstant(dest, "FRAMERATE_3_75", FRAMERATE_3_75);
+	addIntConstant(dest, "FRAMERATE_7_5", FRAMERATE_7_5);
+	addIntConstant(dest, "FRAMERATE_15", FRAMERATE_15);
+	addIntConstant(dest, "FRAMERATE_30", FRAMERATE_30);
+	addIntConstant(dest, "FRAMERATE_60", FRAMERATE_60);
+	addIntConstant(dest, "FRAMERATE_120", FRAMERATE_120);
+	addIntConstant(dest, "FRAMERATE_240", FRAMERATE_240);
+	addIntConstant(dest, "VIDEOMODE_160x120YUV444", VIDEOMODE_160x120YUV444);
+	addIntConstant(dest, "VIDEOMODE_320x240YUV422", VIDEOMODE_320x240YUV422);
+	addIntConstant(dest, "VIDEOMODE_640x480YUV411", VIDEOMODE_640x480YUV411);
+	addIntConstant(dest, "VIDEOMODE_640x480YUV422", VIDEOMODE_640x480YUV422);
+	addIntConstant(dest, "VIDEOMODE_640x480RGB", VIDEOMODE_640x480RGB);
+	addIntConstant(dest, "VIDEOMODE_640x480Y8", VIDEOMODE_640x480Y8);
+	addIntConstant(dest, "VIDEOMODE_640x480Y16", VIDEOMODE_640x480Y16);
+	addIntConstant(dest, "VIDEOMODE_800x600YUV422", VIDEOMODE_800x600YUV422);
+	addIntConstant(dest, "VIDEOMODE_800x600RGB", VIDEOMODE_800x600RGB);
+	addIntConstant(dest, "VIDEOMODE_800x600Y8", VIDEOMODE_800x600Y8);
+	addIntConstant(dest, "VIDEOMODE_800x600Y16", VIDEOMODE_800x600Y16);
+	addIntConstant(dest, "VIDEOMODE_1024x768YUV422", VIDEOMODE_1024x768YUV422);
+	addIntConstant(dest, "VIDEOMODE_1024x768RGB", VIDEOMODE_1024x768RGB);
+	addIntConstant(dest, "VIDEOMODE_1024x768Y8", VIDEOMODE_1024x768Y8);
+	addIntConstant(dest, "VIDEOMODE_1024x768Y16", VIDEOMODE_1024x768Y16);
+	addIntConstant(dest, "VIDEOMODE_1280x960YUV422", VIDEOMODE_1280x960YUV422);
+	addIntConstant(dest, "VIDEOMODE_1280x960RGB", VIDEOMODE_1280x960RGB);
+	addIntConstant(dest, "VIDEOMODE_1280x960Y8", VIDEOMODE_1280x960Y8);
+	addIntConstant(dest, "VIDEOMODE_1280x960Y16", VIDEOMODE_1280x960Y16);
+	addIntConstant(dest, "VIDEOMODE_1600x1200YUV422", VIDEOMODE_1600x1200YUV422);
+	addIntConstant(dest, "VIDEOMODE_1600x1200RGB", VIDEOMODE_1600x1200RGB);
+	addIntConstant(dest, "VIDEOMODE_1600x1200Y8", VIDEOMODE_1600x1200Y8);
+	addIntConstant(dest, "VIDEOMODE_1600x1200Y16", VIDEOMODE_1600x1200Y16);
+}
 
 PyMODINIT_FUNC
 initpygray(void)
@@ -373,6 +452,9 @@ initpygray(void)
 
 	Py_INCREF(&pygray_CameraType);
 	PyModule_AddObject(m, "Camera", (PyObject *)&pygray_CameraType);
+
+	// add the enumerations for framerate/videomode constants
+	addFramerateEnumerations(m);
 
 	// PyErr_NewException requires a non-constant char* for the name, 
 	// probably due to an oversight, hence this strange little dance
