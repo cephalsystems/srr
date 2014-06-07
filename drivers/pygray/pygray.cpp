@@ -394,10 +394,6 @@ static PyMethodDef PygrayMethods[] = {
 	{NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
-#ifndef PyMODINIT_FUNC	/* declarations for DLL import/export */
-#define PyMODINIT_FUNC void
-#endif
-
 void addIntConstant(PyObject* dest, const char* constName, unsigned int constVal) 
 {
 	PyObject* tempVal = Py_BuildValue("i", constVal);	
@@ -437,6 +433,10 @@ void addFramerateEnumerations(PyObject* dest)
 	addIntConstant(dest, "VIDEOMODE_1600x1200Y8", VIDEOMODE_1600x1200Y8);
 	addIntConstant(dest, "VIDEOMODE_1600x1200Y16", VIDEOMODE_1600x1200Y16);
 }
+
+#ifndef PyMODINIT_FUNC	/* declarations for DLL import/export */
+#define PyMODINIT_FUNC void
+#endif
 
 PyMODINIT_FUNC
 initpygray(void)
