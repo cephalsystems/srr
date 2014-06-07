@@ -3,9 +3,13 @@
 #include <sstream>
 #include <iostream>
 
+#define BUFFER_SIZE 1024
+
 typedef struct {
 	PyObject_HEAD
 	usbDevice_t* usbDevice;
+	uint8_t send_buf[BUFFER_SIZE];
+	uint8_t recv_buf[BUFFER_SIZE];
 } linkmpy_LinkMObj;
 
 static PyObject* LinkMError;
@@ -73,9 +77,25 @@ static PyObject* LinkMObj_close(linkmpy_LinkMObj* self) {
 }
 
 static PyObject* LinkMObj_command(linkmpy_LinkMObj* self, PyObject *args) {
-	// TODO: implement this function
 	if(self->usbDevice) {
-		// do stuff
+		int cmd;
+		int bytes_send;
+		int bytes_recv;
+		char* send_buff;
+		int send_buf_len;
+		if (! PyArg_ParseTuple(args, "iiis#", &cmd, &bytes_send, &bytes_recv, &send_buff, &send_buf_len) )
+		{
+			Py_RETURN_NONE;
+		}
+		// what if bytes_send does not match the length of the provided string?
+		int res = linkm_command(self->usbDevice, 
+                  cmd, 
+                  bytes_send, 
+                  bytes_recv,
+                  send_buff, 
+                  self->recv_buf);
+		// is res an error code that we should check?
+		return Py_BuildValue("is#", res, self->recv_buf, BUFFER_SIZE);
 	}
 
 	Py_RETURN_NONE;
@@ -164,6 +184,42 @@ static PyMethodDef LinkMPyMethods[] = {
 	{NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
+void addIntConstant(PyObject* dest, const char* constName, unsigned int constVal) 
+{
+	PyObject* tempVal = Py_BuildValue("i", constVal);	
+	PyModule_AddObject(dest, constName, tempval);
+}
+
+void addEnums(PyObject* dest) 
+{
+	addIntConstant(dest, "IDENT_VENDOR_NUM", IDENT_VENDOR_NUM);
+	addIntConstant(dest, "IDENT_PRODUCT_NUM", IDENT_PRODUCT_NUM);
+	addIntConstant(dest, "IDENT_VENDOR_STRING", IDENT_VENDOR_STRING);
+	addIntConstant(dest, "IDENT_PRODUCT_STRING", IDENT_PRODUCT_STRING);
+	addIntConstant(dest, "START_BYTE", START_BYTE);
+	addIntConstant(dest, "LINKM_CMD_NONE", LINKM_CMD_NONE);
+	addIntConstant(dest, "LINKM_CMD_I2CTRANS", LINKM_CMD_I2CTRANS);
+	addIntConstant(dest, "LINKM_CMD_I2CWRITE", LINKM_CMD_I2CWRITE);
+	addIntConstant(dest, "LINKM_CMD_I2CREAD", LINKM_CMD_I2CREAD);
+	addIntConstant(dest, "LINKM_CMD_I2CSCAN", LINKM_CMD_I2CSCAN);
+	addIntConstant(dest, "LINKM_CMD_I2CCONN", LINKM_CMD_I2CCONN);
+	addIntConstant(dest, "LINKM_CMD_I2CINIT", LINKM_CMD_I2CINIT);
+	addIntConstant(dest, "LINKM_CMD_VERSIONGET", LINKM_CMD_VERSIONGET);
+	addIntConstant(dest, "LINKM_CMD_STATLEDSET", LINKM_CMD_STATLEDSET);
+	addIntConstant(dest, "LINKM_CMD_STATLEDGET", LINKM_CMD_STATLEDGET);
+	addIntConstant(dest, "LINKM_CMD_PLAYSET", LINKM_CMD_PLAYSET);
+	addIntConstant(dest, "LINKM_CMD_PLAYGET", LINKM_CMD_PLAYGET);
+	addIntConstant(dest, "LINKM_CMD_EESAVE", LINKM_CMD_EESAVE);
+	addIntConstant(dest, "LINKM_CMD_EELOAD", LINKM_CMD_EELOAD);
+	addIntConstant(dest, "LINKM_CMD_GOBOOTLOAD", LINKM_CMD_GOBOOTLOAD);
+	addIntConstant(dest, "LINKM_ERR_NONE", LINKM_ERR_NONE);
+	addIntConstant(dest, "LINKM_ERR_BADSTART", LINKM_ERR_BADSTART);
+	addIntConstant(dest, "LINKM_ERR_BADARGS,", LINKM_ERR_BADARGS,);
+	addIntConstant(dest, "LINKM_ERR_I2C,", LINKM_ERR_I2C,);
+	addIntConstant(dest, "LINKM_ERR_I2CREAD,", LINKM_ERR_I2CREAD,);
+	addIntConstant(dest, "LINKM_ERR_NOTOPEN", LINKM_ERR_NOTOPEN);
+}
+
 #ifndef PyMODINIT_FUNC	/* declarations for DLL import/export */
 #define PyMODINIT_FUNC void
 #endif
@@ -181,7 +237,10 @@ initlinkmpy(void)
 					   "Python interface to the PointGrey flycapture sdk.");
 
 	Py_INCREF(&linkmpy_LinkMObjType);
-	PyModule_AddObject(m, "Camera", (PyObject *)&linkmpy_LinkMObjType);
+	PyModule_AddObject(m, "USBLink", (PyObject *)&linkmpy_LinkMObjType);
+
+	// add the c++ defined enums+defines to the module
+	addEnums(m);
 
 	// PyErr_NewException requires a non-constant char* for the name, 
 	// probably due to an oversight, hence this strange little dance
