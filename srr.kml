@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Folder>
+	<name>SRR Rover</name>
+	<description>Network links to Team Cephal SRR rover.</description>
+	<gx:balloonVisibility>1</gx:balloonVisibility>
+	<NetworkLink>
+		<name>Environment</name>
+		<Link>
+			<href>http://127.0.0.1:5000/environment.kml</href>
+			<refreshMode>onChange</refreshMode>
+		</Link>
+	</NetworkLink>
+	<NetworkLink>
+		<name>Mission</name>
+		<Link>
+			<href>http://localhost:5000/mission.kml</href>
+			<refreshMode>onChange</refreshMode>
+		</Link>
+	</NetworkLink>
+	<NetworkLink>
+		<name>Navigation</name>
+		<Link>
+			<href>http://localhost:5000/navigation.kml</href>
+			<refreshMode>onInterval</refreshMode>
+			<refreshInterval>1</refreshInterval>
+		</Link>
+	</NetworkLink>
+	<NetworkLink>
+		<name>Perception</name>
+		<Link>
+			<href>http://localhost:5000/perception.kml</href>
+			<refreshMode>onInterval</refreshMode>
+			<refreshInterval>1</refreshInterval>
+		</Link>
+	</NetworkLink>
+</Folder>
+</kml>
