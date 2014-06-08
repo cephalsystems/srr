@@ -5,9 +5,6 @@
 import numpy as np
 import cv2
 
-# local modules
-from common import splitfn
-
 # built-in modules
 import os
 
@@ -31,6 +28,7 @@ if __name__ == '__main__':
         img_mask = '../cpp/left*.jpg'
 
     img_names = glob(img_mask)
+    print(img_names)
     debug_dir = args.get('--debug')
     square_size = float(args.get('--square_size', 1.0))
 
@@ -42,7 +40,7 @@ if __name__ == '__main__':
     obj_points = []
     img_points = []
     h, w = 0, 0
-    for fn in img_names:
+    for fidx, fn in enumerate(img_names):
         print 'processing %s...' % fn,
         img = cv2.imread(fn, 0)
         if img is None:
@@ -57,8 +55,9 @@ if __name__ == '__main__':
         if debug_dir:
             vis = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
             cv2.drawChessboardCorners(vis, pattern_size, corners, found)
-            path, name, ext = splitfn(fn)
-            cv2.imwrite('%s/%s_chess.bmp' % (debug_dir, name), vis)
+            dbfn = '%s/%d_chess.png' % (debug_dir, fidx)
+            print("Saving debug... %s" % dbfn)
+            cv2.imwrite(dbfn, vis)
         if not found:
             print 'chessboard not found'
             continue
