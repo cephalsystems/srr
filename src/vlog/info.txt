@@ -1,0 +1,2 @@
+this directory holds the 'visual log'
+(i.e., vision debug frames)

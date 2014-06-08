@@ -1,20 +1,6 @@
 import pygray
-import pygrayutils
-
-
-def findValidFramerate(rawf):
-    framerates = [(3.75, pygray.FRAMERATE_3_75),
-                  (7.5, pygray.FRAMERATE_7_5),
-                  (15.0, pygray.FRAMERATE_15),
-                  (30.0, pygray.FRAMERATE_30),
-                  (60.0, pygray.FRAMERATE_60),
-                  (120.0, pygray.FRAMERATE_120),
-                  (240.0, pygray.FRAMERATE_240)]
-    for (frate, cval) in framerates:
-        if frate >= rawf:
-            return (cval, frate)
-    return (30.0, pygray.FRAMERATE_30)  # default to 30
-
+import utils.pygrayutils as pygrayutils
+import time
 
 class CameraProcess:
 
@@ -31,15 +17,23 @@ class CameraProcess:
     def do_iteration(self):
         self.frameidx += 1
         self.datas["frameidx"] = self.frameidx
-        self.grab_frames()
-        self.run_processes()
+        allgood = self.grab_frames()
+        if allgood:
+                self.run_processes()
+        return allgood
 
     def grab_frames(self):
+        allgood = True
         for cam, dataname in self.camlist:
-            camdata = cam.getframe()
-            imdata = pygrayutils.framestr_to_array(camdata)
-            self.datas[dataname] = imdata
-
+            try:
+                camdata = cam.getframe()
+                imdata = pygrayutils.framestr_to_array(camdata)
+                self.datas[dataname] = imdata
+            except pygray.FrameError as e:
+                allgood = False
+                print("Frame error: " + str(e))
+        return allgood
+                
     def run_processes(self):
         for (proc, inputs, outputs) in self.processes:
             # is a blanket exception good python form? No.
@@ -62,10 +56,12 @@ class CameraProcess:
             for i in range(nretries):
                 try:
                     cam.start()
+                    time.sleep(0.3)
                     break
                 except pygray.CameraError as e:
                     print("Had camera error while opening camera: " + str(e))
                     print("Retrying.")
+                    time.sleep(1)
 
     def stop_cams(self):
         for cam, oname in self.camlist:
@@ -75,20 +71,8 @@ class CameraProcess:
         self.cams[camname] = cam
         self.camlist.append((cam, camname))
 
-    def add_color_camera(self, guid, camname, framerate=10.0):
-        frate, frateconst = findValidFramerate(framerate)
-        resolutionconst = pygray.VIDEOMODE_1280x960RGB
+    def add_camera(self, guid, camname, usecolor=True, framerate=10.0):
         cam = pygray.Camera(guid)
-        cam.setcolormode(True)
-        cam.setvideomode(resolutionconst, frateconst)
+        cam.setframerate(framerate)
+        cam.setcolormode(usecolor)
         self.add_raw_camera(cam, camname)
-        print("Requested framrate %f, using %f" % (framerate, frate))
-
-    def add_bw_camera(self, guid, camname, framerate=10.0):
-        frate, frateconst = findValidFramerate(framerate)
-        resolutionconst = pygray.VIDEOMODE_640x480Y8
-        cam = pygray.Camera(guid)
-        cam.setcolormode(True)
-        cam.setvideomode(resolutionconst, frateconst)
-        self.add_raw_camera(cam, camname)
-        print("Requested framrate %f, using %f" % (framerate, frate))

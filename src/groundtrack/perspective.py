@@ -46,6 +46,13 @@ def rot_x(theta):
                      [0.0,  c_t,  s_t],
                      [0.0, -s_t,  c_t]])
 
+class Unwarper:
+    def __init__(self, cammatrix, distortion_coeffs):
+        self.mat = cammatrix
+        self.coeffs = distortion_coeffs
+
+    def apply(self, srcim):
+        return cv2.undistort(srcim, self.mat, self.coeffs)
 
 class PerspectiveCorrector:
 
@@ -53,10 +60,12 @@ class PerspectiveCorrector:
         self.srcsize = srcsize
         self.destsize = destsize
         self.tf = None
+        self.inv_tf = None
         self.f = 1.0
         self.h = 0.5
         self.angle = 0.0
         self.psize = 1.0
+        self.shift_view = True
 
     def set_patch_size(self, psize):
         self.psize = psize
@@ -76,7 +85,10 @@ class PerspectiveCorrector:
 
     def build_transform(self):
         ppm = self.destsize / self.psize
-        ytarget = -math.tan(self.angle) * self.h
+        self.ppm = ppm
+        ytarget = 0.0
+        if self.shift_view:
+            ytarget = -math.tan(self.angle) * self.h
         A = image_to_world(ppm, self.psize, self.psize, 0.0, ytarget, self.h)
         R = rot_x(self.angle)
         B = world_to_camera(self.f, self.srcsize[1], self.srcsize[0])
@@ -85,23 +97,43 @@ class PerspectiveCorrector:
 
     def get_transform(self):
         # only rebuild if it doesn't exist
-        if not self.tf:
+        if self.tf is None:
             self.tf, self.inv_tf = self.build_transform()
 
         return self.tf
 
     def get_inv_transform(self):
         # only rebuild if it doesn't exist
-        if not self.tf:
+        if self.tf is None:
             self.tf, self.inv_tf = self.build_transform()
 
         return self.inv_tf
 
     def image_coords_to_plane(self, coords):
-        temptf = self.get_inv_transform()
+        temptf = self.get_transform()
         tcoords = temptf.dot(coords)
         tcoords /= tcoords[2,:]
         return tcoords
+
+    def image_coords_to_metric(self, coords):
+        tcoords = self.image_coords_to_plane(coords)
+        tcoords -= (self.destsize / 2.0)
+        tcoords /= self.ppm 
+        tcoords[1,:] *= -1.0
+        return tcoords
+
+    def calculate_metric_sizes(self):
+        xcoords = np.zeros((1,self.srcsize[0]), dtype=np.float32)
+        ycoords = np.arange(self.srcsize[0], dtype=np.float32).reshape(1,-1)
+        zcoords = np.ones((1,self.srcsize[0]), dtype=np.float32)
+        coords0 = np.vstack([xcoords, ycoords, zcoords])
+        coords1 = np.copy(coords0)
+        coords1[0,:] += 1.0
+        tc0 = self.image_coords_to_metric(coords0)
+        tc1 = self.image_coords_to_metric(coords1)
+        diffs = np.abs(tc0[0,:] - tc1[0,:])
+        return diffs
+
 
     def apply(self, srcim):
         tf = self.get_transform()

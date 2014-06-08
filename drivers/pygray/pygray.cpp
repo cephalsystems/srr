@@ -202,13 +202,24 @@ static PyObject* PygrayCamera_setframerate(pygray_CameraObject* self,
 			return NULL;
 		}
 
+		std::cout << "present: " << prop.present << std::endl;
+		std::cout << "absControl: " << prop.absControl << "\n";
+		std::cout << "onePush: " << prop.onePush << "\n";
+		std::cout << "onOff: " << prop.onOff << "\n";
+		std::cout << "autoManualMode: " << prop.autoManualMode << "\n";
+
 		std::cout << "VA: " << prop.valueA << ", VB: " << prop.valueB << " absv: " << prop.absValue << std::endl;
 		prop.absValue = framerate;
+		prop.absControl = true;
+		prop.autoManualMode = false;
 
 		error = self->cam->SetProperty(&prop);
 		if(error != PGRERROR_OK) {
+		  std::cout << "Had error setting property...\n";
 			doCameraError(error);
 			return NULL;
+		} else {
+		  std::cout << "Set framerate to " << framerate << "\n";
 		}
 	}
 
