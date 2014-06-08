@@ -1195,7 +1195,7 @@ class Roboclaw(object):
             self._write_long(accel)
             self._write_slong(speed)
             self._write_long(distance)
-            self._write_byte(buffer)
+            self._write_byte(buffered)
             self._write_checksum()
 
     def m2_set_speed_accel_distance(self, speed, accel, distance,
@@ -1227,7 +1227,7 @@ class Roboclaw(object):
             self._write_long(accel)
             self._write_slong(speed)
             self._write_long(distance)
-            self._write_byte(buffer)
+            self._write_byte(buffered)
             self._write_checksum()
 
     def mixed_set_speed_accel_distance(self, accel, speed_m1, distance_m1,
@@ -1444,6 +1444,7 @@ class Roboclaw(object):
             self._write_long(deadzone)
             self._write_long(min)
             self._write_long(max)
+            self._write_checksum()
 
     @m2_position_pid.setter
     def m2_position_pid(self, value):
@@ -1473,8 +1474,10 @@ class Roboclaw(object):
             self._write_long(deadzone)
             self._write_long(min)
             self._write_long(max)
+            self._write_checksum()
 
-    def m1_set_speed_accel_decel_position(self, accel, speed, decel, position):
+    def m1_set_speed_accel_decel_position(self, accel, speed, decel, position,
+                                          buffered=False):
         """
         65 - Drive M1 with signed Speed, Accel, Deccel and Position
 
@@ -1490,10 +1493,11 @@ class Roboclaw(object):
             self._write_long(speed)
             self._write_long(decel)
             self._write_long(position)
-            self._write_byte(buffer)
+            self._write_byte(buffered)
             self._write_checksum()
 
-    def m2_set_speed_accel_decel_position(self, accel, speed, decel, position):
+    def m2_set_speed_accel_decel_position(self, accel, speed, decel, position,
+                                          buffered=False):
         """
         66 - Drive M2 with signed Speed, Accel, Deccel and Position
 
@@ -1509,7 +1513,7 @@ class Roboclaw(object):
             self._write_long(speed)
             self._write_long(decel)
             self._write_long(position)
-            self._write_byte(buffer)
+            self._write_byte(buffered)
             self._write_checksum()
 
     def mixed_set_speed_accel_decel_position(
@@ -1534,7 +1538,7 @@ class Roboclaw(object):
             self._write_long(speed_m2)
             self._write_long(decel_m2)
             self._write_long(position_m2)
-            self._write_byte(buffer)
+            self._write_byte(buffered)
             self._write_checksum()
 
     def _write(self, value):
