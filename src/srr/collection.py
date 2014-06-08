@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import time
+import math
 import logging
 import roboclaw
 logger = logging.getLogger('collection')
@@ -8,7 +9,11 @@ SCOOPING_LOWER_TIMEOUT = 15.0
 SCOOPING_RAISE_TIMEOUT = 18.0
 SCOOPING_HOME_TIMEOUT = 20.0
 
-LIFTER_TOP_POSITION = 4350
+LIFTER_TOP_POSITION = 4350  # Position of the lifter when upright.
+
+BAGGER_REVOLUTION = 69000  # Ticks per bagging revolution.
+BAGGER_ACCEL = 100
+BAGGER_SPEED = 100
 
 class Collector(object):
     """
@@ -51,8 +56,23 @@ class Collector(object):
         """
         Move the bagger to its home location.
         """
-        # TODO: implement this.
-        pass
+        # Wait for bagger to come back online.
+        logger.info("Waiting for bagger to be enabled.")
+        while not self.bagger.is_connected:
+            time.sleep(0.5)
+        logger.info("Rotating bagger.")
+
+        # Get current bagger location.
+        try:
+            curr_encoder, status = self.bagger.m2_encoder
+        except ValueError:
+            return
+
+        # Move to next bagger revolution.
+        next_encoder = BAGGER_REVOLUTION * \
+          (1 + math.floor(curr_encoder / BAGGER_REVOLUTION))
+        self.bagger.m1_set_speed_accel_decel_position(
+            BAGGER_ACCEL, BAGGER_SPEED, BAGGER_ACCEL, next_encoder)
         
     def home_scoop(self):
         while True:
@@ -106,8 +126,7 @@ class Collector(object):
                 self.home_scoop()
                 break
 
-        self.bagger.m1_backward(0)
-                                    
+        self.bagger.m1_backward(0)                                    
 
     def raise_scoop(self):
         logger.info("Raising scoop.")
