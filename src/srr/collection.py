@@ -4,11 +4,11 @@ import logging
 import roboclaw
 logger = logging.getLogger('collection')
 
-SCOOPING_LOWER_TIMEOUT = 10.0
-SCOOPING_RAISE_TIMEOUT = 10.0
+SCOOPING_LOWER_TIMEOUT = 15.0
+SCOOPING_RAISE_TIMEOUT = 18.0
 SCOOPING_HOME_TIMEOUT = 20.0
 
-LIFTER_TOP_POSITION = 4400
+LIFTER_TOP_POSITION = 4350
 
 class Collector(object):
     """
@@ -59,7 +59,7 @@ class Collector(object):
             # Wait for bagger to come back online.
             logger.info("Waiting to rehome scoop.")
             while not self.bagger.is_connected:
-                time.sleep(0.5)        
+                time.sleep(0.5)
             logger.info("Rehoming scoop.")
 
             # If we can, move the bagger to safe position.
