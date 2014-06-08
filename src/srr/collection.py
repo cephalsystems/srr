@@ -12,8 +12,8 @@ SCOOPING_HOME_TIMEOUT = 20.0
 LIFTER_TOP_POSITION = 4350  # Position of the lifter when upright.
 
 BAGGER_REVOLUTION = 69000  # Ticks per bagging revolution.
-BAGGER_ACCEL = 100
-BAGGER_SPEED = 100
+BAGGER_SPEED = 70
+BAGGER_TIMEOUT = 10.0
 
 class Collector(object):
     """
@@ -34,6 +34,9 @@ class Collector(object):
         # Reset encoders on roboclaws.
         self.bagger.reset_encoders()
         self.scoop.reset_encoders()
+
+        # Maintain a local offset for encoders
+        self.bagger_offset = 0
         
         logger.info("Collector initialized.")
 
@@ -52,7 +55,7 @@ class Collector(object):
         logger.info("SCOOPING")
         time.sleep(2)
 
-    def home_bagger(self):
+    def drive_bagger(self, position):
         """
         Move the bagger to its home location.
         """
@@ -65,14 +68,38 @@ class Collector(object):
         # Get current bagger location.
         try:
             curr_encoder, status = self.bagger.m2_encoder
+            curr_encoder += self.bagger_offset
         except ValueError:
             return
 
-        # Move to next bagger revolution.
-        next_encoder = BAGGER_REVOLUTION * \
-          (1 + math.floor(curr_encoder / BAGGER_REVOLUTION))
-        self.bagger.m1_set_speed_accel_decel_position(
-            BAGGER_ACCEL, BAGGER_SPEED, BAGGER_ACCEL, next_encoder)
+        # Move to position in next bagger revolution.
+        next_encoder = position + BAGGER_REVOLUTION * \
+          (math.floor(curr_encoder / BAGGER_REVOLUTION))
+
+        timeout = time.time() + BAGGER_TIMEOUT
+        self.bagger.m2_forward(BAGGER_SPEED)
+
+        while time.time() < timeout:
+            try:
+                time.sleep(0.05)
+                curr_encoder, status = self.bagger.m2_encoder
+                curr_encoder += self.bagger_offset
+
+                print (curr_encoder, next_encoder)
+                if curr_encoder > next_encoder:
+                    logger.info("Bagging completed.")
+                    break
+
+            except ValueError, e:
+                logger.info("Rehome interrupted by '{0}'".format(e))
+                self.bagger_offset = curr_encoder
+                
+                while not self.bagger.is_connected:
+                    time.sleep(1)
+                timeout = time.time() + BAGGER_TIMEOUT
+                self.bagger.m2_forward(BAGGER_SPEED)
+                
+        self.bagger.m2_forward(0)
         
     def home_scoop(self):
         while True:
