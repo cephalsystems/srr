@@ -104,6 +104,8 @@ class Collector(object):
             except ValueError:
                 logger.info("Waiting for resume.")
                 self.home_scoop()
+                break
+
         self.bagger.m1_backward(0)
                                     
 
@@ -119,12 +121,24 @@ class Collector(object):
                 if position > LIFTER_TOP_POSITION:
                     logger.info("Scoop raised.");
                     break
-                print(position)
             except ValueError:
                 logger.info("Waiting for resume.")
-                self.home_scoop()                        
+                self.home_scoop()
+
+                # Reset timeout and resume raising.
+                timeout = time.time() + SCOOPING_LOWER_TIMEOUT
+                self.bagger.m1_forward(127)
+
         self.bagger.m1_forward(0)
 
+    def start_scoop(self):
+        logger.info("Starting scoop.")
+        self.scoop.m1_forward(74)
+
+    def stop_scoop(self):
+        logger.info("Stopping scoop.")
+        self.scoop.m1_forward(0)
+        
     def bag(self):
         """
         Perform a bagging action.
