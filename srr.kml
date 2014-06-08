@@ -7,21 +7,21 @@
 	<NetworkLink>
 		<name>Environment</name>
 		<Link>
-			<href>http://127.0.0.1:5000/environment.kml</href>
+			<href>http://10.42.0.1:5000/environment.kml</href>
 			<refreshMode>onChange</refreshMode>
 		</Link>
 	</NetworkLink>
 	<NetworkLink>
 		<name>Mission</name>
 		<Link>
-			<href>http://localhost:5000/mission.kml</href>
+			<href>http://10.42.0.1:5000/mission.kml</href>
 			<refreshMode>onChange</refreshMode>
 		</Link>
 	</NetworkLink>
 	<NetworkLink>
 		<name>Navigation</name>
 		<Link>
-			<href>http://localhost:5000/navigation.kml</href>
+			<href>http://10.42.0.1:5000/navigation.kml</href>
 			<refreshMode>onInterval</refreshMode>
 			<refreshInterval>1</refreshInterval>
 		</Link>
@@ -29,7 +29,7 @@
 	<NetworkLink>
 		<name>Perception</name>
 		<Link>
-			<href>http://localhost:5000/perception.kml</href>
+			<href>http://10.42.0.1:5000/perception.kml</href>
 			<refreshMode>onInterval</refreshMode>
 			<refreshInterval>1</refreshInterval>
 		</Link>
