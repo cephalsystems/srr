@@ -21,7 +21,7 @@ class Roboclaw(object):
             self._port = port
             self._address = address
             self._checksum = 0
-
+            
     @property
     def port(self):
         with self._device_lock:
@@ -29,8 +29,15 @@ class Roboclaw(object):
 
     @property
     def is_connected(self):
+        # Make a safe function call to force initialization of device.
+        try:
+            self.firmware_version
+        except ValueError:
+            pass
+
+        # Check if we succeeded.
         with self._device_lock:
-            return (self._device.port is None)
+            return (self._device.port is not None)
 
     @port.setter
     def port(self, value):

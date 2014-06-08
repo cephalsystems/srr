@@ -22,10 +22,10 @@ if __name__ == "__main__":
                         '/dev/serial/by-path/pci-0000:00:14.0-usb-0:4:1.0',
                         help='serial port for drivetrain roboclaw')
     parser.add_argument('-sp', '--scoop-port', type=str, default=
-                        '/dev/serial/by-path/pci-0000:04:00.0-usb-0:1:1.0',
+                        '/dev/serial/by-path/pci-0000:04:00.0-usb-0:2:1.0',
                         help='serial port for scoop roboclaw')
     parser.add_argument('-bp', '--bagger-port', type=str, default=
-                        '/dev/serial/by-path/pci-0000:04:00.0-usb-0:2:1.0',
+                        '/dev/serial/by-path/pci-0000:04:00.0-usb-0:1:1.0',
                         help='serial port for bagger roboclaw')
     args = parser.parse_args()
 

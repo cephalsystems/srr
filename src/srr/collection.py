@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 import time
 import logging
+import roboclaw
 logger = logging.getLogger('collection')
 
-SCOOPING_LOWER_TIMEOUT = 5.0
-SCOOPING_RAISE_TIMEOUT = 5.0
-SCOOPING_HOME_TIMEOUT = 10.0
+SCOOPING_LOWER_TIMEOUT = 10.0
+SCOOPING_RAISE_TIMEOUT = 10.0
+SCOOPING_HOME_TIMEOUT = 20.0
+
+LIFTER_TOP_POSITION = 4400
 
 class Collector(object):
     """
@@ -44,78 +47,83 @@ class Collector(object):
         logger.info("SCOOPING")
         time.sleep(2)
 
-    def home_bagger():
+    def home_bagger(self):
         """
         Move the bagger to its home location.
         """
         # TODO: implement this.
         pass
         
-    def home_scoop():
+    def home_scoop(self):
         while True:
             # Wait for bagger to come back online.
             logger.info("Waiting to rehome scoop.")
-            while not bagger.is_connected():
+            while not self.bagger.is_connected:
                 time.sleep(0.5)        
             logger.info("Rehoming scoop.")
 
             # If we can, move the bagger to safe position.
-            safe_bagger()
+            self.home_bagger()
         
             # Slowly lower scoop until we stop seeing motion.
             try:
                 timeout = time.time() + SCOOPING_HOME_TIMEOUT
-                last_encoder = bagger.m1_encoder
-                bagger.m1_backward(40)
+                last_encoder, status = self.bagger.m1_encoder
+                self.bagger.m1_backward(64)
         
                 while time.time() < timeout:
-                    curr_encoder = bagger.m1_encoder
-                    if last_encoder - curr_encoder < 10:
+                    time.sleep(0.25)
+                    curr_encoder, status = self.bagger.m1_encoder
+                    if last_encoder - curr_encoder < 3:
                         logger.info("Valid home found.")
                         break
                     last_encoder = curr_encoder
-                    time.sleep(0.25)
                     
+                self.bagger.reset_encoders()
+                self.bagger.m1_backward(0)
                 logger.info("Scoop home set.")
-                bagger.reset_encoders()
                 return
-            except ValueError:
-                logger.info("Rehome interrupted.")
+            except ValueError, e:
+                logger.info("Rehome interrupted by '{0}'".format(e))
                 time.sleep(1)
         
-    def lower_scoop():
+    def lower_scoop(self):
+        logger.info("Lowering scoop.")
         timeout = time.time() + SCOOPING_LOWER_TIMEOUT
         last_encoder = 900000
-        bagger.m1_backward(90)
-        
-        while time.time() < timeout:
-            try:
-                curr_encoder = bagger.m1_encoder
-                if last_encoder - curr_encoder < 50:
-                    logger.info("Scoop lowered.")
-                    bagger.m1_backward(0)
-                    return
-                
-                prev_encoder = curr_encoder
-                time.sleep(0.25)
-            except ValueError:
-                logger.info("Waiting for resume.")
-                rehome_scoop()
+        self.bagger.m1_backward(127)
 
-    def raise_scoop():
+        while time.time() < timeout:
+            try:
+                time.sleep(0.25)
+                curr_encoder, status = self.bagger.m1_encoder
+                if last_encoder - curr_encoder < 10:
+                    logger.info("Scoop lowered.")
+                    break
+                prev_encoder = curr_encoder
+            except ValueError:
+                logger.info("Waiting for resume.")
+                self.home_scoop()
+        self.bagger.m1_backward(0)
+                                    
+
+    def raise_scoop(self):
+        logger.info("Raising scoop.")
         timeout = time.time() + SCOOPING_RAISE_TIMEOUT
-        bagger.m1_backward(90)
+        self.bagger.m1_forward(127)
         
         while time.time() < timeout:
             try:
-                if bagger.m1_encoder > 4400:
-                    bagger.m1_forward(0)
-                    logger.info("Reached top position")
-                    return
                 time.sleep(0.25)
+                position, status = self.bagger.m1_encoder
+                if position > LIFTER_TOP_POSITION:
+                    logger.info("Scoop raised.");
+                    break
+                print(position)
             except ValueError:
                 logger.info("Waiting for resume.")
-                rehome_scoop()
+                self.home_scoop()                        
+        self.bagger.m1_forward(0)
 
     def bag(self):
         """
