@@ -53,6 +53,7 @@ class PerspectiveCorrector:
         self.srcsize = srcsize
         self.destsize = destsize
         self.tf = None
+        self.inv_tf = None
         self.f = 1.0
         self.h = 0.5
         self.angle = 0.0
@@ -85,20 +86,20 @@ class PerspectiveCorrector:
 
     def get_transform(self):
         # only rebuild if it doesn't exist
-        if not self.tf:
+        if self.tf is None:
             self.tf, self.inv_tf = self.build_transform()
 
         return self.tf
 
     def get_inv_transform(self):
         # only rebuild if it doesn't exist
-        if not self.tf:
+        if self.tf is None:
             self.tf, self.inv_tf = self.build_transform()
 
         return self.inv_tf
 
     def image_coords_to_plane(self, coords):
-        temptf = self.get_inv_transform()
+        temptf = self.get_transform()
         tcoords = temptf.dot(coords)
         tcoords /= tcoords[2,:]
         return tcoords
