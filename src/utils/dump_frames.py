@@ -30,7 +30,7 @@ def main():
     def print_cameras(camlist):
         for guid in camlist:
             cam = pygray.Camera(guid)
-            print(repr(cam.getinfo()))
+            print(guid + ": " + repr(cam.getinfo()))
 
 
     def get_cam_by_serial(serialnum, camlist):
