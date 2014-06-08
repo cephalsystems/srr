@@ -68,16 +68,16 @@ class Collector(object):
             # Slowly lower scoop until we stop seeing motion.
             try:
                 timeout = time.time() + SCOOPING_HOME_TIMEOUT
-                last_encoder, status = self.bagger.m1_encoder
+                prev_encoder, status = self.bagger.m1_encoder
                 self.bagger.m1_backward(64)
         
                 while time.time() < timeout:
                     time.sleep(0.25)
                     curr_encoder, status = self.bagger.m1_encoder
-                    if last_encoder - curr_encoder < 3:
+                    if prev_encoder - curr_encoder < 3:
                         logger.info("Valid home found.")
                         break
-                    last_encoder = curr_encoder
+                    prev_encoder = curr_encoder
                     
                 self.bagger.reset_encoders()
                 self.bagger.m1_backward(0)
@@ -90,14 +90,14 @@ class Collector(object):
     def lower_scoop(self):
         logger.info("Lowering scoop.")
         timeout = time.time() + SCOOPING_LOWER_TIMEOUT
-        last_encoder = 900000
+        prev_encoder = 9000000
         self.bagger.m1_backward(127)
 
         while time.time() < timeout:
             try:
                 time.sleep(0.25)
                 curr_encoder, status = self.bagger.m1_encoder
-                if last_encoder - curr_encoder < 10:
+                if prev_encoder - curr_encoder < 10:
                     logger.info("Scoop lowered.")
                     break
                 prev_encoder = curr_encoder
