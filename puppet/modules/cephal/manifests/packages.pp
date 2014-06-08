@@ -28,6 +28,7 @@ class cephal::packages {
                     # Pip dependencies
                     'libxml2-dev',
                     'libxslt1-dev',
+                    'python-lxml',
                     # ROS packages
                     'ros-indigo-desktop',
                     ]
@@ -50,7 +51,8 @@ class cephal::packages {
     require  => [ Package['python-pip'],
                   # PyKML dependencies
                   Package['libxml2-dev'],
-                  Package['libxslt1-dev'] ],
+                  Package['libxslt1-dev'],
+                  Package['python-lxml'] ]
   }
   
   # Require the aptitude puppet module.
