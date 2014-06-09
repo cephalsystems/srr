@@ -24,7 +24,7 @@ class VisionRunner:
         self.scaled_pos = [0.0,0.0]
 
         self.run_rear = True
-        self.run_frontL = True
+        self.run_frontL = False
         self.run_frontR = False
 
         if self.run_frontL:
