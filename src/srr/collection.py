@@ -62,11 +62,10 @@ class Collector(object):
         self.navigator.motors.mixed_set_speed_accel(SCOOPING_DRIVE_ACCEL,
                                                     SCOOPING_DRIVE_SPEED,
                                                     SCOOPING_DRIVE_SPEED)
-        time.sleep(4.0)
+        time.sleep(5.0)
         self.navigator.motors.mixed_set_speed_accel(SCOOPING_DRIVE_ACCEL,
                                                     0, 0)
         self.drive_scoop(LIFTER_HOLD_POSITION)
-        self.drive_bagger(BAGGER_REVOLUTION)
         self.drive_bagger(BAGGER_PRELOAD)
         self.drive_scoop(LIFTER_RAISED_POSITION)
         time.sleep(2.0)
@@ -90,6 +89,7 @@ class Collector(object):
         try:
             curr_encoder, status = self.bagger.m2_encoder
             curr_encoder += self.bagger_offset
+            curr_encoder = max(0, curr_encoder)
         except ValueError:
             return
 
@@ -105,6 +105,7 @@ class Collector(object):
                 time.sleep(0.01)
                 curr_encoder, status = self.bagger.m2_encoder
                 curr_encoder += self.bagger_offset
+                curr_encoder = max(0, curr_encoder)
 
                 if self.bagger.motor_currents[1] > 15.0:
                     logger.info("Bagger is stalled {0}".format(position))
