@@ -6,15 +6,17 @@ import roboclaw
 logger = logging.getLogger('collection')
 
 SCOOPING_TIMEOUT = 20.0
-LIFTER_RAISED_POSITION = 4800  # Position of the lifter when upright.
-LIFTER_HOLD_POSITION = 4200  # Position of the lifter when clear of bagger.
+SCOOPING_DRIVE_SPEED = 30000
+SCOOPING_DRIVE_ACCEL = 15000
+
+LIFTER_RAISED_POSITION = 5000  # Position of the lifter when upright.
+LIFTER_HOLD_POSITION = 4100  # Position of the lifter when clear of bagger.
 LIFTER_STANDBY_POSITION = 2000 # Position of the lifter when in standby.
 
 BAGGER_REVOLUTION = 69000  # Ticks per bagging revolution.
-BAGGER_SPEED = 70
+BAGGER_SPEED = 90
 BAGGER_TIMEOUT = 10.0
 
-BAGGER_HOME = 0
 BAGGER_PRELOAD = 12500
 
 class Collector(object):
@@ -57,7 +59,15 @@ class Collector(object):
         logger.info("COLLECTING!")
         self.lower_scoop()
         self.start_scoop()
-        time.sleep(5.0) # Drive forward at half speed
+        self.navigator.motors.mixed_set_speed_accel(SCOOPING_DRIVE_ACCEL,
+                                                    SCOOPING_DRIVE_SPEED,
+                                                    SCOOPING_DRIVE_SPEED)
+        time.sleep(4.0)
+        self.navigator.motors.mixed_set_speed_accel(SCOOPING_DRIVE_ACCEL,
+                                                    0, 0)
+        self.drive_scoop(LIFTER_HOLD_POSITION)
+        self.drive_bagger(BAGGER_REVOLUTION)
+        self.drive_bagger(BAGGER_PRELOAD)
         self.drive_scoop(LIFTER_RAISED_POSITION)
         time.sleep(2.0)
         self.stop_scoop()
@@ -92,12 +102,14 @@ class Collector(object):
 
         while time.time() < timeout:
             try:
-                time.sleep(0.05)
+                time.sleep(0.01)
                 curr_encoder, status = self.bagger.m2_encoder
                 curr_encoder += self.bagger_offset
 
-                print (curr_encoder, next_encoder)
-                if curr_encoder > next_encoder:
+                if self.bagger.motor_currents[1] > 15.0:
+                    logger.info("Bagger is stalled {0}".format(position))
+                    break
+                if curr_encoder > next_encoder - 400:
                     logger.info("Bagging completed.")
                     break
 
@@ -171,12 +183,15 @@ class Collector(object):
             try:
                 time.sleep(0.1)
                 curr_position, status = self.bagger.m1_encoder
+                if self.bagger.motor_currents[0] > 15.0:
+                    logger.info("Scoop stalled before {0}".format(position))
+                    break
                 if curr_position < position - 20:
                     self.bagger.m1_forward(127)
                 elif curr_position > position + 20:
                     self.bagger.m1_backward(127)
                 else:
-                    logger.info("Scoop moved to {0}".format(position));
+                    logger.info("Scoop moved to {0}".format(position))
                     break
             except ValueError:
                 logger.info("Waiting for resume.")
