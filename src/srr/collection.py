@@ -66,7 +66,9 @@ class Collector(object):
         self.navigator.motors.mixed_set_speed_accel(SCOOPING_DRIVE_ACCEL,
                                                     0, 0)
         self.drive_scoop(LIFTER_HOLD_POSITION)
+        self.stop_scoop()
         self.drive_bagger(BAGGER_PRELOAD)
+        self.start_scoop()
         self.drive_scoop(LIFTER_RAISED_POSITION)
         time.sleep(2.0)
         self.stop_scoop()
