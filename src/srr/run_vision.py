@@ -18,7 +18,7 @@ class VisionRunner:
         self.cams = CameraProcess()
         self.frate = 10.0
         self.logdir = "/home/cephal/vlog"
-        self.odo_multiplier = 0.167
+        self.odo_multiplier = 0.00167
 
         self.theta = 0
         self.scaled_pos = [0.0,0.0]
