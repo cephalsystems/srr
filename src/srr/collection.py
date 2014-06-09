@@ -11,7 +11,7 @@ SCOOPING_DRIVE_ACCEL = 15000
 
 LIFTER_RAISED_POSITION = 5000  # Position of the lifter when upright.
 LIFTER_HOLD_POSITION = 4100  # Position of the lifter when clear of bagger.
-LIFTER_STANDBY_POSITION = 2000 # Position of the lifter when in standby.
+LIFTER_STANDBY_POSITION = 1000 # Position of the lifter when in standby.
 
 BAGGER_REVOLUTION = 69000  # Ticks per bagging revolution.
 BAGGER_SPEED = 90
