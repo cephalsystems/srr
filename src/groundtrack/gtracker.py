@@ -118,6 +118,7 @@ class GroundTracker:
         self.imageAligner = imageAligner
         self.matches = None
         self.nfeats = 0
+        self.found_points = None
 
     def setImages(self, im0, im1):
         self.images[0] = im0
@@ -129,6 +130,7 @@ class GroundTracker:
         self.processImageMatching()
 
     def processImageMatching(self):
+        self.found_points = None
         if self.featMatcher:
             (m, k, d) = self.featMatcher.matchFeatures(self.images[0],
                                                        self.images[1])
@@ -148,10 +150,19 @@ class GroundTracker:
 
         if self.poseEstimator:
             self.tf = self.poseEstimator.estimatePose(p1, p2)
+        self.found_points = [p1, p2]
 
         if self.imageAligner:
             self.tf = self.imageAligner.alignImages(self.images[0],
                                                     self.images[1])
+
+    def draw_features(self, idx=0):
+        tempim = cv2.merge([self.images[idx], self.images[idx], self.images[idx]])
+        if self.found_points is not None:
+            curpts = self.found_points[idx]
+            for i in range(curpts.shape[0]):
+                cv2.circle(tempim, (curpts[i][0], curpts[i][1]), 2, (0,255,255), -2)
+        return tempim
 
     def drawMatchedFeatures(self):
         return cv2.drawMatches(self.images[0], self.keypoints[0],

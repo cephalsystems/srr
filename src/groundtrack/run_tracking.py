@@ -7,7 +7,7 @@ import numpy as np
 
 class DefaultTracker:
     def __init__(self):
-        self.tracker = gtracker.GroundTracker(gtracker.BRISKMatcher(),
+        self.tracker = gtracker.GroundTracker(gtracker.ORBMatcher(),
                                      gtracker.AffinePoseEstimator(), None)
         self.prevframe = None
         self.total_tf = np.eye(3,3)
