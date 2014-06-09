@@ -18,8 +18,9 @@ K_TURN = 50000
 K_DRIVE = 50000
 SPEED_MIN = 20000
 SPEED_MAX = 100000
-ACCEL_MAX = 10000
+ACCEL_MAX = 40000
 WHEELBASE_WIDTH = 0.5
+TICKS_PER_METER = 40000
 
 ORIGIN = shapely.geometry.Point(0, 0)
 
@@ -187,6 +188,21 @@ class Navigator(object):
         v2 = clamp(v1, -SPEED_MAX, SPEED_MAX)
         self.motors.mixed_set_speed_accel(ACCEL_MAX, v1, v2)
 
+    def drive(self, distance):
+        """
+        Drives directly forward by the specified distance.
+        Waits until complete.
+        """
+        sign = 1.0
+        if distance < 0:
+            sign = -1.0
+            distance *= -1.0
+        tick_distance = distance * TICKS_PER_METER
+
+        self.motors.mixed_set_speed_accel_distance(
+            ACCEL_MAX, sign*SPEED_MAX, tick_distance, sign*SPEED_MAX, tick_distance)
+        time.sleep(2.0 * distance)
+        
     def main(self):
         """
         Main execution function.  This is called from within a thread in
