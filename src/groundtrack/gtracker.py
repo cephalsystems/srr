@@ -156,12 +156,16 @@ class GroundTracker:
             self.tf = self.imageAligner.alignImages(self.images[0],
                                                     self.images[1])
 
-    def draw_features(self, idx=0):
-        tempim = cv2.merge([self.images[idx], self.images[idx], self.images[idx]])
+    def draw_features(self):
+        tempim = cv2.merge([self.images[1], self.images[1], self.images[1]])
         if self.found_points is not None:
-            curpts = self.found_points[idx]
-            for i in range(curpts.shape[0]):
-                cv2.circle(tempim, (curpts[i][0], curpts[i][1]), 2, (0,255,255), -2)
+            spts = self.found_points[0]
+            dpts = self.found_points[1]
+            for i in range(spts.shape[0]):
+                cv2.circle(tempim, (dpts[i][0], dpts[i][1]), 4, (0,255,255), -4)
+                cv2.circle(tempim, (spts[i][0], spts[i][1]), 2, (255,0,255), -2)
+                cv2.line(tempim, (dpts[i][0], dpts[i][1]),
+                         (spts[i][0], spts[i][1]), (0,255,0))
         return tempim
 
     def drawMatchedFeatures(self):
