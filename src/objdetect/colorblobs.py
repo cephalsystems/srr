@@ -4,6 +4,9 @@ import math
 import numpy as np
 import argparse
 import sys
+import logging
+
+logger = logging.getLogger('vision')
 
 def findBloomedObjects(srcim, thresh, minrad):
 	grayim = cv2.cvtColor(srcim, cv2.cv.CV_RGB2GRAY)
@@ -11,7 +14,7 @@ def findBloomedObjects(srcim, thresh, minrad):
 
 def drawExtractedNodes(baseim, nodelist, drawcolor):
 	for (x, y, rad) in nodelist:
-		print("x: %f, y: %f, rad: %f" % (x,y,rad))
+		logger.debug("x: %f, y: %f, rad: %f" % (x,y,rad))
 		cv2.circle(baseim, (int(x), int(y)), int(rad), drawcolor, 2)
 
 def extractNodeCircles(grayim, colorThresh, radThresh, fillThresh):
@@ -19,7 +22,7 @@ def extractNodeCircles(grayim, colorThresh, radThresh, fillThresh):
 	retbinimg = np.copy(binimg)
 	contours, conthierarchy = cv2.findContours(binimg, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 	ret = []
-	print("Found %d contours" % len(contours))
+	logger.debug("Found %d contours" % len(contours))
 	for pts in contours:
 		center, rad = cv2.minEnclosingCircle(pts)
 		momts = cv2.moments(pts)
