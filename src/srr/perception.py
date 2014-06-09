@@ -3,6 +3,7 @@ import time
 import threading
 import shapely.geometry
 import logging
+import run_vision
 logger = logging.getLogger('perception')
 
 
@@ -40,7 +41,7 @@ class Perceptor(object):
         Current (x,y,theta) pose of the rover, as best estimated by the
         odometry system in the global frame.
         """
-        return self.position.x, self.position.y, self._rotation
+        return self.position.x, self.position.y, self.rotation
 
     @property
     def obstacles(self):
@@ -81,5 +82,10 @@ class Perceptor(object):
         the constructor.  The is_running flag is used to indicate when it
         should stop executing.
         """
+        vision_system = run_vision.VisionRunner()
+        vision_system.start_vision()
         while (self.is_running):
-            time.sleep(1)
+            vision_system.process_frame()
+            self.position = shapely.geometry.Point(vision_system.scaled_pos[0],
+                                                   vision_system.scaled_pos[1])
+            self.rotation = vision_system.theta
