@@ -17,7 +17,7 @@ class VisionRunner:
         self.frate = 10.0
 
         self.run_rear = True
-        self.run_frontL = False
+        self.run_frontL = True
         self.run_frontR = False
 
         if self.run_frontL:
@@ -57,7 +57,7 @@ class VisionRunner:
         uw_left = None
         if self.run_frontL:
             uw_left = self.unwarper.apply(self.cams.get_data("front_left"))
-            front_left = cv2.flip(uw_left,0)
+            front_left = cv2.flip(cv2.flip(uw_left,1), 0)
         front_right = None
         if self.run_frontR:
             front_right = self.cams.get_data("front_right")
