@@ -18,6 +18,9 @@ class VisionRunner:
         self.logdir = "/home/cephal/vlog"
         self.odo_multiplier = 0.167
 
+        self.theta = 0
+        self.scaled_pos = [0.0,0.0]
+
         self.run_rear = True
         self.run_frontL = True
         self.run_frontR = False
@@ -96,6 +99,7 @@ class VisionRunner:
             print("Doing tracking...")
             totaltheta, totalpos, dtheta, dpos = self.odometry.do_tracking(rear_corrected)
             scaled_pos = [v*self.odo_multiplier for v in totalpos]
+            self.theta = totaltheta
             print("Total theta: %f, total pos: (%f,%f)" % (totaltheta, totalpos[0], totalpos[1]))
             print("Scaled pos: (%f,%f)" % tuple(scaled_pos))
             self.scaled_pos = scaled_pos
@@ -123,9 +127,11 @@ class VisionRunner:
                 tpts = self.pc.image_coords_to_metric(pts)
                 print("TF NODES: " + str(tpts))
 
-
-if __name__ == '__main__':
+def main():
     vt = VisionRunner()
     vt.start_vision()
     while True:
         vt.process_frame()
+
+if __name__ == '__main__':
+    main()
