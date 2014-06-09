@@ -15,12 +15,20 @@ class VisionRunner:
         self.objmod = 10
         self.cams = CameraProcess()
         self.frate = 10.0
-        #self.cams.add_camera("beb81a4eda09d70e9c8038688a06fce0",
-        #                     "front_left", True, self.frate)
-        #self.cams.add_camera("b2e944402e6ae32816dcf9108bfd6c70",
-        #                     "front_right", True, self.frate)
-        self.cams.add_camera("4f350bf72d86c847732377c088108d50",
-                             "rear", False, self.frate)
+
+        self.run_rear = True
+        self.run_frontL = False
+        self.run_frontR = False
+
+        if self.run_frontL:
+            self.cams.add_camera("beb81a4eda09d70e9c8038688a06fce0",
+                                 "front_left", True, self.frate)
+        if self.run_frontR:
+            self.cams.add_camera("b2e944402e6ae32816dcf9108bfd6c70",
+                                 "front_right", True, self.frate)
+        if self.run_rear:
+            self.cams.add_camera("4f350bf72d86c847732377c088108d50",
+                                 "rear", False, self.frate)
 
         self.cmatrix = np.array([[1.18444524e+03, 0.00000000e+00,
                                   6.64141923e+02],
@@ -45,13 +53,20 @@ class VisionRunner:
         allgood = self.cams.do_iteration()
         if not allgood:
             return []
-        #uw_left = self.unwarper.apply(self.cams.get_data("front_left"))
-        #front_left = cv2.flip(uw_left,0)
-        #front_right = self.cams.get_data("front_right")
-        rear = cv2.flip(cv2.transpose(self.cams.get_data("rear")),0)
-        cv2.imwrite("vlog/f%d_rear_raw.jpg" % self.fidx, rear)
+        front_left = None
+        uw_left = None
+        if self.run_frontL:
+            uw_left = self.unwarper.apply(self.cams.get_data("front_left"))
+            front_left = cv2.flip(uw_left,0)
+        front_right = None
+        if self.run_frontR:
+            front_right = self.cams.get_data("front_right")
+        rear = None
+        if self.run_rear:
+            rear = cv2.flip(cv2.transpose(self.cams.get_data("rear")),0)
+            cv2.imwrite("vlog/f%d_rear_raw.jpg" % self.fidx, rear)
 
-        if self.pc == None and False:
+        if self.pc == None and self.run_frontL:
             self.pc = PerspectiveCorrector(front_left.shape, 500)
             self.pc.set_angle(60.0 * math.pi / 180.0)
             self.pc.set_focal_length(self.cmatrix[0,0] / 960.0)
@@ -59,29 +74,32 @@ class VisionRunner:
             self.pc.set_patch_size(10.0)
             self.pc.shift_view = False
 
-        if self.rearpc == None:
+        if self.rearpc == None and self.run_rear:
             self.rearpc = PerspectiveCorrector(rear.shape, 500)
             self.rearpc.set_angle(15.0 * math.pi / 180.0)
             self.rearpc.set_focal_length(2.6)
             self.rearpc.set_height(1.6)
             self.rearpc.set_patch_size(1.5)
 
-        rear_corrected = self.rearpc.apply(rear)
-        cv2.imwrite("vlog/f%drear_pc.jpg" % self.fidx, rear_corrected)
+        rear_corrected = None
+        if self.run_rear:
+            rear_corrected = self.rearpc.apply(rear)
+            cv2.imwrite("vlog/f%drear_pc.jpg" % self.fidx, rear_corrected)
 
         if self.odometry == None:
             self.odometry = DefaultTracker()
 
 
-        print("Doing tracking...")
-        totaltheta, totalpos, dtheta, dpos = self.odometry.do_tracking(rear_corrected)
-        print("Total theta: %f, total pos: (%f,%f)" % (totaltheta, totalpos[0], totalpos[1]))
-        print("Dtheta: %f, dpos: (%f, %f)" % (dtheta, dpos[0], dpos[1]))
-        print("Frame %d, nfeats: %d" % (self.fidx, self.odometry.nfeats))
-        dbgimg = self.odometry.tracker.draw_features()
-        cv2.imwrite("vlog/f%d_tdbg.jpg" % self.fidx, dbgimg)
+        if self.run_rear:
+            print("Doing tracking...")
+            totaltheta, totalpos, dtheta, dpos = self.odometry.do_tracking(rear_corrected)
+            print("Total theta: %f, total pos: (%f,%f)" % (totaltheta, totalpos[0], totalpos[1]))
+            print("Dtheta: %f, dpos: (%f, %f)" % (dtheta, dpos[0], dpos[1]))
+            print("Frame %d, nfeats: %d" % (self.fidx, self.odometry.nfeats))
+            dbgimg = self.odometry.tracker.draw_features()
+            cv2.imwrite("vlog/f%d_tdbg.jpg" % self.fidx, dbgimg)
 
-        if self.fidx % self.objmod == 0 and False:
+        if self.fidx % self.objmod == 0 and self.run_frontL:
             print("Doing object detection...")
             nodes, objimage = do_bloom_marker_detection(front_left,
                                                         254, 5, 0.4)
