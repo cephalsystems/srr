@@ -31,7 +31,12 @@ class BasicMatcher:
         self.keypoints = [kp1, kp2]
         self.descriptors = [des1, des2]
 
+        if kp1 == None or kp2 == None or des1 == None or des2 == None:
+            return (None, None, None)
+
         # Match descriptors.
+        print(des1.shape)
+        print(des2.shape)
         matches = self.matcher.match(des1, des2)
 
         # Sort them in the order of their distance.
@@ -112,6 +117,7 @@ class GroundTracker:
         self.poseEstimator = poseEstimator
         self.imageAligner = imageAligner
         self.matches = None
+        self.nfeats = 0
 
     def setImages(self, im0, im1):
         self.images[0] = im0
@@ -130,9 +136,15 @@ class GroundTracker:
             self.keypoints = k
             self.descriptors = d
 
+        if m == None or k == None or d == None:
+            self.nfeats = 0
+            return
+
         p1, p2, kp_pairs = drawmatch.filter_matches(self.keypoints[0],
                                                     self.keypoints[1],
                                                     self.matches)
+
+        self.nfeats = p1.shape[0]
 
         if self.poseEstimator:
             self.tf = self.poseEstimator.estimatePose(p1, p2)

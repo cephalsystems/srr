@@ -6,27 +6,25 @@ import math
 import numpy as np
 
 class DefaultTracker:
-    def __init__(self, rawim):
-        srcim = self.orient_raw_frame(rawim)
-        self.tracker = gtracker.GroundTracker(gtracker.ORBMatcher(),
+    def __init__(self):
+        self.tracker = gtracker.GroundTracker(gtracker.BRISKMatcher(),
                                      gtracker.AffinePoseEstimator(), None)
-        self.pc = perspective.PerspectiveCorrector(srcim.shape, 500)
-        self.pc.set_angle(math.pi / 12)
-        self.pc.set_focal_length(1.3)
-        self.pc.set_height(0.5)
         self.prevframe = None
         self.total_tf = np.eye(3,3)
         self.totaltheta = 0.0
         self.totalpos = [0.0,0.0]
+        self.nfeats = 0
 
     def orient_raw_frame(self, f):
         return cv2.flip(cv2.transpose(cv2.imread(fname)), 0)
 
     def do_tracking(self, rawim):
-        srcim = self.orient_raw_frame(rawim)
-        curframe = self.pc.apply(srcim)
+        #srcim = rawim #self.orient_raw_frame(rawim)
+        #curframe = self.pc.apply(srcim)
+        curframe = rawim
         dtheta = 0.0
         dpos = [0.0, 0.0]
+        prevframe = self.prevframe
         if prevframe is not None:
             self.tracker.setImages(prevframe, curframe)
             self.tracker.processImageMatching()
@@ -40,6 +38,7 @@ class DefaultTracker:
                 totaltheta, totalpos = gtracker.rigid2dToRT(self.total_tf)
                 self.totaltheta = totaltheta
                 self.totalpos = totalpos
+            self.nfeats = self.tracker.nfeats
 
         self.prevframe = curframe
         return (self.totaltheta, self.totalpos, dtheta, dpos)
