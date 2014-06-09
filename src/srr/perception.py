@@ -86,6 +86,8 @@ class Perceptor(object):
         vision_system.start_vision()
         while (self.is_running):
             vision_system.process_frame()
-            self.position = shapely.geometry.Point(vision_system.scaled_pos[0],
-                                                   vision_system.scaled_pos[1])
+            # camera faces backwards
+            worldx = -1.0 * vision_system.scaled_pos[0]
+            worldy = -1.0 * vision_system.scaled_pos[1]
+            self.position = shapely.geometry.Point(worldx, worldy)
             self.rotation = vision_system.theta
