@@ -5,15 +5,17 @@ import logging
 import roboclaw
 logger = logging.getLogger('collection')
 
-SCOOPING_LOWER_TIMEOUT = 15.0
-SCOOPING_RAISE_TIMEOUT = 18.0
-SCOOPING_HOME_TIMEOUT = 20.0
-
-LIFTER_TOP_POSITION = 4350  # Position of the lifter when upright.
+SCOOPING_TIMEOUT = 20.0
+LIFTER_RAISED_POSITION = 4800  # Position of the lifter when upright.
+LIFTER_HOLD_POSITION = 4200  # Position of the lifter when clear of bagger.
+LIFTER_STANDBY_POSITION = 2000 # Position of the lifter when in standby.
 
 BAGGER_REVOLUTION = 69000  # Ticks per bagging revolution.
 BAGGER_SPEED = 70
 BAGGER_TIMEOUT = 10.0
+
+BAGGER_HOME = 0
+BAGGER_PRELOAD = 12500
 
 class Collector(object):
     """
@@ -47,13 +49,22 @@ class Collector(object):
         """
         logger.info("Collector shutdown.")
 
-    def scoop(self):
+    def collect(self):
         """
-        Perform a scooping action.
+        Perform a scoop and collect action.
         Assumes the scoop is in the 'safe' position.
         """
-        logger.info("SCOOPING")
-        time.sleep(2)
+        logger.info("COLLECTING!")
+        self.lower_scoop()
+        self.start_scoop()
+        time.sleep(5.0) # Drive forward at half speed
+        self.drive_scoop(LIFTER_RAISED_POSITION)
+        time.sleep(2.0)
+        self.stop_scoop()
+        self.drive_scoop(LIFTER_HOLD_POSITION)
+        self.drive_bagger(BAGGER_REVOLUTION)
+        self.drive_bagger(BAGGER_REVOLUTION)
+        self.drive_scoop(LIFTER_STANDBY_POSITION)
 
     def drive_bagger(self, position):
         """
@@ -109,12 +120,9 @@ class Collector(object):
                 time.sleep(0.5)
             logger.info("Rehoming scoop.")
 
-            # If we can, move the bagger to safe position.
-            self.home_bagger()
-        
             # Slowly lower scoop until we stop seeing motion.
             try:
-                timeout = time.time() + SCOOPING_HOME_TIMEOUT
+                timeout = time.time() + SCOOPING_TIMEOUT
                 prev_encoder, status = self.bagger.m1_encoder
                 self.bagger.m1_backward(64)
         
@@ -136,7 +144,7 @@ class Collector(object):
         
     def lower_scoop(self):
         logger.info("Lowering scoop.")
-        timeout = time.time() + SCOOPING_LOWER_TIMEOUT
+        timeout = time.time() + SCOOPING_TIMEOUT
         prev_encoder = 9000000
         self.bagger.m1_backward(127)
 
@@ -155,47 +163,40 @@ class Collector(object):
 
         self.bagger.m1_backward(0)                                    
 
-    def raise_scoop(self):
-        logger.info("Raising scoop.")
-        timeout = time.time() + SCOOPING_RAISE_TIMEOUT
-        self.bagger.m1_forward(127)
-        
+    def drive_scoop(self, position):
+        logger.info("Driving scoop.")
+        timeout = time.time() + SCOOPING_TIMEOUT
+
         while time.time() < timeout:
             try:
-                time.sleep(0.25)
-                position, status = self.bagger.m1_encoder
-                if position > LIFTER_TOP_POSITION:
-                    logger.info("Scoop raised.");
+                time.sleep(0.1)
+                curr_position, status = self.bagger.m1_encoder
+                if curr_position < position - 20:
+                    self.bagger.m1_forward(127)
+                elif curr_position > position + 20:
+                    self.bagger.m1_backward(127)
+                else:
+                    logger.info("Scoop moved to {0}".format(position));
                     break
             except ValueError:
                 logger.info("Waiting for resume.")
                 self.home_scoop()
 
                 # Reset timeout and resume raising.
-                timeout = time.time() + SCOOPING_LOWER_TIMEOUT
-                self.bagger.m1_forward(127)
+                timeout = time.time() + SCOOPING_TIMEOUT
 
         self.bagger.m1_forward(0)
-
+        
     def start_scoop(self):
         logger.info("Starting scoop.")
         self.scoop.m1_forward(74)
 
     def stop_scoop(self):
         logger.info("Stopping scoop.")
-        self.scoop.m1_forward(0)
+        self.scoop.m1_backward(32)
+        time.sleep(0.25)
+        self.scoop.m1_backward(0)
         
-    def bag(self):
-        """
-        Perform a bagging action.
-        """
-        logger.info("BAGGING")
-        # Advance bagger to safe position.
-        
-        # Lift until we reach top position.
-
-        time.sleep(2)
-
     def home(self):
         """
         Attempts to drive onto the home platform if we are really close.
