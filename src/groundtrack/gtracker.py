@@ -4,7 +4,8 @@ from operator import attrgetter
 import sys
 import drawmatch
 import math
-
+import logging
+logger = logging.getLogger('vision')
 
 class RigidImageAligner:
 
@@ -35,8 +36,8 @@ class BasicMatcher:
             return (None, None, None)
 
         # Match descriptors.
-        print(des1.shape)
-        print(des2.shape)
+        logger.debug(des1.shape)
+        logger.debug(des2.shape)
         matches = self.matcher.match(des1, des2)
 
         # Sort them in the order of their distance.

@@ -6,6 +6,8 @@ from cameraprocess import CameraProcess
 from groundtrack.perspective import PerspectiveCorrector, Unwarper
 from groundtrack.run_tracking import DefaultTracker
 from objdetect.colorblobs import do_bloom_marker_detection
+import logging
+logger = logging.getLogger('vision')
 
 class VisionRunner:
     def __init__(self):
@@ -96,20 +98,20 @@ class VisionRunner:
 
 
         if self.run_rear:
-            print("Doing tracking...")
+            logger.debug("Doing tracking...")
             totaltheta, totalpos, dtheta, dpos = self.odometry.do_tracking(rear_corrected)
             scaled_pos = [v*self.odo_multiplier for v in totalpos]
             self.theta = totaltheta
-            print("Total theta: %f, total pos: (%f,%f)" % (totaltheta, totalpos[0], totalpos[1]))
-            print("Scaled pos: (%f,%f)" % tuple(scaled_pos))
+            logger.debug("Total theta: %f, total pos: (%f,%f)" % (totaltheta, totalpos[0], totalpos[1]))
+            logger.debug("Scaled pos: (%f,%f)" % tuple(scaled_pos))
             self.scaled_pos = scaled_pos
-            print("Dtheta: %f, dpos: (%f, %f)" % (dtheta, dpos[0], dpos[1]))
-            print("Frame %d, nfeats: %d" % (self.fidx, self.odometry.nfeats))
+            logger.debug("Dtheta: %f, dpos: (%f, %f)" % (dtheta, dpos[0], dpos[1]))
+            logger.debug("Frame %d, nfeats: %d" % (self.fidx, self.odometry.nfeats))
             dbgimg = self.odometry.tracker.draw_features()
             cv2.imwrite("%s/f%d_tdbg.jpg" % (self.logdir,self.fidx), dbgimg)
 
         if self.fidx % self.objmod == 0 and self.run_frontL:
-            print("Doing object detection...")
+            logger.debug("Doing object detection...")
             nodes, objimage = do_bloom_marker_detection(front_left,
                                                         254, 5, 0.4)
             cv2.imwrite("%s/f%d_fl.jpg" % (self.logdir,self.fidx), front_left)
@@ -122,10 +124,10 @@ class VisionRunner:
             for i, p in enumerate(nodes):
                 pts[0,i] = p[0]
                 pts[1,i] = p[1]
-            print("FOUND NODES: " + str(pts))
+            logger.debug("FOUND NODES: " + str(pts))
             if len(nodes) > 0:
                 tpts = self.pc.image_coords_to_metric(pts)
-                print("TF NODES: " + str(tpts))
+                logger.debug("TF NODES: " + str(tpts))
 
 def main():
     vt = VisionRunner()
