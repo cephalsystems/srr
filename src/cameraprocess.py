@@ -75,4 +75,5 @@ class CameraProcess:
         cam = pygray.Camera(guid)
         cam.setframerate(framerate)
         cam.setcolormode(usecolor)
+        cam.setframedelay(400)
         self.add_raw_camera(cam, camname)
