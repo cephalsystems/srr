@@ -28,7 +28,7 @@ class VisionRunner:
         self.platpos = None
         self.platscale = 0.1
 
-        self.run_rear = False
+        self.run_rear = True
         self.run_frontL = True
         self.run_frontR = False
 
