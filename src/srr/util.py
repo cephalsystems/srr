@@ -171,7 +171,8 @@ def to_world(local_origin, local_point):
     Converts a point from a local frame into a global frame.
     This is still all happening in the local world frame (UTM meters).
     """
-    global_point = shapely.affinity.rotate(local_point, local_origin[1])
+    global_point = shapely.affinity.rotate(local_point, local_origin[1],
+                                           origin=ORIGIN, use_radians=True)
     global_point = shapely.affinity.translate(global_point,
                                               local_origin[0].x,
                                               local_origin[0].y)
@@ -186,5 +187,6 @@ def to_local(local_origin, global_point):
     local_point = shapely.affinity.translate(global_point,
                                              -local_origin[0].x,
                                              -local_origin[0].y)
-    local_point = shapely.affinity.rotate(local_point, -local_origin[1])
+    local_point = shapely.affinity.rotate(local_point, -local_origin[1],
+                                          origin=ORIGIN, use_radians=True)
     return local_point
