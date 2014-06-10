@@ -12,6 +12,7 @@ logger = logging.getLogger('vision')
 class VisionRunner:
     def __init__(self):
         self.pc = None
+        self.altpc = None
         self.rearpc = None
         self.fidx = 0
         self.objmod = 10
@@ -23,6 +24,9 @@ class VisionRunner:
 
         self.theta = 0
         self.scaled_pos = [0.0,0.0]
+
+        self.platpos = None
+        self.platscale = 0.1
 
         self.run_rear = False
         self.run_frontL = True
@@ -76,12 +80,18 @@ class VisionRunner:
 
         if self.pc == None and self.run_frontL:
             self.pc = PerspectiveCorrector(front_left.shape, 500)
-            self.pc.set_angle(67.0 * math.pi / 180.0)
+            self.pc.set_angle(64.0 * math.pi / 180.0)
             self.pc.set_focal_length(self.cmatrix[0,0] / 960.0)
             self.pc.set_height(1.6)
-            self.pc.set_patch_size(20.0)
+            self.pc.set_patch_size(10.0)
             self.pc.shift_view = False
             self.sizetable = self.pc.calculate_metric_sizes()
+            self.altpc = PerspectiveCorrector(front_left.shape, 500)
+            self.altpc.set_angle(60.0 * math.pi / 180.0)
+            self.altpc.set_focal_length(self.cmatrix[0,0] / 960.0 * 1.0)
+            self.altpc.set_height(1.6)
+            self.altpc.set_patch_size(60.0)
+            self.altpc.shift_view = False
 
         if self.rearpc == None and self.run_rear:
             self.rearpc = PerspectiveCorrector(rear.shape, 500)
@@ -120,7 +130,9 @@ class VisionRunner:
             cv2.imwrite("%s/f%d_obj.png" % (self.logdir,self.fidx), objimage)
 
             impwarp = self.pc.apply(front_left)
-            cv2.imwrite("%s/f%d_pc.jpg" % (self.logdir,self.fidx), impwarp) 
+            altwarp = self.altpc.apply(front_left)
+            #cv2.imwrite("%s/f%d_pc.jpg" % (self.logdir,self.fidx), impwarp)
+            cv2.imwrite("%s/f%d_pcalt.jpg" % (self.logdir,self.fidx), altwarp) 
             #warpim = self.pc.apply(
             pts = np.ones((3, len(nodes)), dtype=np.float32) 
             for i, p in enumerate(nodes):
@@ -131,14 +143,24 @@ class VisionRunner:
                 tpts = self.pc.image_coords_to_metric(pts)
                 logger.debug("TF NODES: " + str(tpts))
 
-            platnodes, platimage = do_bloom_platform_detection(front_left,
+            #platnodes, platimage = do_bloom_platform_detection(front_left,
+            #                                                   254,
+            #                                                   self.sizetable)
+            platnodes, platimage = do_bloom_marker_detection(altwarp,
                                                                254,
-                                                               self.sizetable)
-            print("Platnodes: " + str(platnodes))
-            ptpts = None
+                                                               10,
+                                                               0.2)
+            self.platpos = None
             if len(platnodes) > 0:
-                ptpts = self.pc.image_coords_to_metric(pts)
-                print("PLATFORM LOCATED?: " + str(ptpts))
+                tx = self.platscale * (platnodes[0][0] - 250.0)
+                ty = self.platscale * (250.0 - platnodes[0][1])
+                self.platpos = (tx, ty)
+                print("Platpos (m): (%f, %f)" % (tx, ty))
+            print("Platnodes: " + str(platnodes))
+            #ptpts = None
+            #if len(platnodes) > 0:
+            #    ptpts = self.pc.image_coords_to_metric(pts)
+            #    print("PLATFORM LOCATED?: " + str(ptpts))
             cv2.imwrite("%s/f%d_plat.png" % (self.logdir,self.fidx), platimage)
 
 def main():
