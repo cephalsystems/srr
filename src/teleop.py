@@ -48,31 +48,31 @@ if __name__ == '__main__':
                     break
                 elif ch == 'w':
                     print "Half Forwards!\r\n"
-                    r.mixed_set_speed(30000, 30000)
+                    r.mixed_set_speed_accel(75000, 30000, 30000)
                 elif ch == 'W':
                     print "Forwards!\r\n"
-                    r.mixed_set_speed(80000, 80000)
+                    r.mixed_set_speed_accel(75000, 80000, 80000)
                 elif ch == 's' or ch == 'S':
                     print "Stop!\r\n"
                     r.mixed_set_speed(0, 0)
                 elif ch == 'a':
                     print "Left!\r\n"
-                    r.mixed_set_speed(20000, 80000)
+                    r.mixed_set_speed_accel(75000, -30000, 30000)
                 elif ch == 'd':
                     print "Right!\r\n"
-                    r.mixed_set_speed(80000, 20000)
+                    r.mixed_set_speed_accel(75000, 30000, -30000)
                 elif ch == 'x':
                     print "Half Backwards!\r\n"
-                    r.mixed_set_speed(-30000, -30000)
+                    r.mixed_set_speed_accel(75000, -30000, -30000)
                 elif ch == 'X':
                     print "Backwards!\r\n"
-                    r.mixed_set_speed(-60000, -60000)
+                    r.mixed_set_speed_accel(75000, -60000, -60000)
                 elif ch == 'z':
                     print "Backward Left!\r\n"
-                    r.mixed_set_speed(-60000, -80000)
+                    r.mixed_set_speed_accel(75000, -60000, -80000)
                 elif ch == 'c':
                     print "Backwards Right\r\n"
-                    r.mixed_set_speed(-80000, -60000)
+                    r.mixed_set_speed_accel(75000, -80000, -60000)
                 elif ch == '[':
                     print "Scoop OFF\r\n"
                     s.m1_forward(0)
