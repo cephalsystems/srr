@@ -5,19 +5,20 @@ import threading
 import roboclaw
 import shapely.geometry
 import shapely.affinity
+import srr.util
 import logging
 logger = logging.getLogger('navigation')
 
 # Potential field constants.
-K_OBS = 1e2
-K_TARGET = 1e2
+K_OBS = 1.0
+K_TARGET = 1.0
 MAX_DISTANCE = 10.0
 
 # Driving constants.
-K_TURN = 50000
+K_TURN = 1.0
 K_DRIVE = 50000
-SPEED_MIN = 20000
-SPEED_MAX = 100000
+SPEED_MIN = 10000
+SPEED_MAX = 80000
 ACCEL_MAX = 40000
 WHEELBASE_WIDTH = 0.350
 TICKS_PER_METER = 66000.0
@@ -67,9 +68,9 @@ class Navigator(object):
         self.perceptor = perceptor
 
         # Get rover starting location from environment.
-        self.position = shapely.geometry.Point(environment.start[0],
-                                               environment.start[1])
-        self.rotation = environment.start[2]
+        self._position = shapely.geometry.Point(environment.start[0],
+                                                environment.start[1])
+        self._rotation = environment.start[2]
 
         # Set no current goal
         self.goal = None
@@ -94,6 +95,14 @@ class Navigator(object):
 
         logging.info("Navigator shutdown.")
 
+    @property
+    def position(self):
+        return self.perceptor.position
+
+    @property
+    def rotation(self):
+        return self.perceptor.rotation
+        
     @property
     def pose(self):
         """
@@ -147,9 +156,8 @@ class Navigator(object):
 
         # If we are not near the waypoint or inside the bounds,
         # try to get there.
-        vector = goal - self.position
-        target_angle = math.atan2(vector.y, vector.x)
-        self.goto_angle(target_angle - self.rotation)
+        target = srr.util.to_local((self.position, self.rotation), goal)
+        self.goto_target(target)
         return False
 
     def goto_home(self):
@@ -188,10 +196,14 @@ class Navigator(object):
 
         self.goal = self._compute_safe_target(point, obstacles)
         distance, theta = to_polar(self.goal)
+        print (point.x, point.y)
+        print '->'
+        print (distance, theta)
 
         # Create speeds based on proportional heuristic.
         forward_speed = K_DRIVE * math.cos(theta) * distance
-        turn_speed = K_TURN * (1.0 / (1.0 + math.exp(-2.0*theta)))  # Logistic
+        turn_speed = K_TURN * theta * (forward_speed + 10000)
+
 
         # Combine turning and forward terms to get motor speed.
         v1 = forward_speed - turn_speed
@@ -199,7 +211,11 @@ class Navigator(object):
 
         # Limit velocities to reasonable range.
         v1 = clamp(v1, -SPEED_MAX, SPEED_MAX)
-        v2 = clamp(v1, -SPEED_MAX, SPEED_MAX)
+        v2 = clamp(v2, -SPEED_MAX, SPEED_MAX)
+
+        print '='
+        print (v1, v2)
+        
         self.motors.mixed_set_speed_accel(ACCEL_MAX, v1, v2)
 
     def _compute_safe_target(self, target, obstacles):
@@ -293,6 +309,7 @@ class Navigator(object):
         should stop executing.
         """
         last_encoders = None
+        time.sleep(1)
 
         while (self.is_running):
             try:
@@ -321,9 +338,9 @@ class Navigator(object):
                         )
 
                     # Integrate with existing pose estimate.
-                    self.rotation += dTheta
-                    self.position = shapely.affinity.rotate(
-                        self.position, dTheta,
+                    self._rotation += dTheta
+                    self._position = shapely.affinity.rotate(
+                        self._position, dTheta,
                         origin=rotation_center, use_radians=True)
 
                 last_encoders = (curr_encoder_m1, curr_encoder_m2)

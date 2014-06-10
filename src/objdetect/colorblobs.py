@@ -67,6 +67,29 @@ def extractNodeCircles(grayim, colorThresh, radThresh, fillThresh):
             ret.append((cmx, cmy, rad))
     return ret, retbinimg
 
+def do_bod_metric(srcimg, graythresh, minpsize, minsize, maxsize, fillthresh, sizetable):
+    grayim = cv2.cvtColor(srcimg, cv2.cv.CV_RGB2GRAY)
+    rawnodes, binimg = extractAllCircles(grayim, graythresh)
+    nodes = []
+    rejnodes = []
+    mpos = sizetable.shape[0]
+    print("Considering %d object possibilities..." % len(rawnodes))
+    for cmx,cmy,rad,area,arclen in rawnodes:
+        basepos = max(min(int(cmy),mpos-1),0)
+        truesize = rad * sizetable[basepos]
+        density = area / (rad*rad*math.pi)
+        print("xy: (%f,%f), Baserad: %f, truesize: %f" % (cmx, cmy, rad, truesize))
+        if rad > minpsize and truesize > minsize and truesize < maxsize and density > fillthresh:
+            print("Added node.")
+            nodes.append((cmx, cmy, rad))
+        else:
+            rejnodes.append((cmx, cmy, rad))
+        
+    tarimg = cv2.merge([binimg, binimg, binimg])
+    drawExtractedNodes(tarimg, rejnodes, (0,0,255))
+    drawExtractedNodes(tarimg, nodes, (255,255,0))
+    return (nodes, tarimg)
+
 def do_bloom_platform_detection(srcimg, graythresh, sizetable):
     grayim = cv2.cvtColor(srcimg, cv2.cv.CV_RGB2GRAY)
     rawnodes, binimg = extractAllCircles(grayim, graythresh)

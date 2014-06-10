@@ -99,10 +99,7 @@ class MissionPlanner(object):
             self.navigator.goto_goal(10.0, 0.0)  # Position of precached sample
 
         # Try to find the sample by spiraling.
-        start_time = time.time()
-        timeout = start_time + 1200.0  # 20 minute timeout.
-        while time.time() < timeout \
-                and self.navigator.motors.main_voltage > 11.8:
+        while True
             time.sleep(0.01)
             if not self.is_running:
                 logger.info("Mission aborted.")
@@ -119,19 +116,33 @@ class MissionPlanner(object):
 
                 if min_distance > MissionPlanner.DISTANCE_THRESHOLD:
                     self.navigator.goto_target(min_target)
+                elif abs(min_target[1]) > 0.1:
+                    self.navigator.angle(min_target[1])
                 else:
                     self.collector.collect()
+                    break
             else:
                 # If we don't see anything, just spiral around.
                 self.navigator.spiral(time.time() - start_time)
 
         # Spend the rest of the time trying to go home.
-        start_time = time.time()
-        while not self.navigator.goto_home(start_time):
+        while not self.navigator.goto_goal(srr.navigation.ORIGIN) \
+          and self.perceptor.home is None
             time.sleep(0.01)
             if not self.is_running:
                 logger.info("Mission aborted.")
                 return
+
+        start_time = None
+        while True:
+            if self.perceptor.home is not None:
+                start_time = None
+                if self.navigator.goto_home(start_time):
+                    break
+            else:
+                if start_time is None:
+                    start_time = time.time()
+                self.navigator.spiral(start_time)
 
         # Shut down everything and complete mission.
         self.collector.home()

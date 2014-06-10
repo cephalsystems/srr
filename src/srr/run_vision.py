@@ -5,7 +5,7 @@ import math
 from cameraprocess import CameraProcess
 from groundtrack.perspective import PerspectiveCorrector, Unwarper
 from groundtrack.run_tracking import DefaultTracker
-from objdetect.colorblobs import do_bloom_marker_detection,create_mask,apply_mask
+from objdetect.colorblobs import do_bloom_marker_detection,create_mask,apply_mask,do_bod_metric
 import logging
 logger = logging.getLogger('vision')
 
@@ -128,8 +128,11 @@ class VisionRunner:
 
         if self.fidx % self.objmod == 0 and self.run_frontL:
             logger.debug("Doing object detection...")
-            nodes, objimage = do_bloom_marker_detection(front_left,
-                                                        254, 5, 0.4)
+            # nodes, objimage = do_bloom_marker_detection(front_left,
+            #                                             254, 5, 0.4)
+            # graythresh, min_pixel_size, min_metric_size, max_metric_size, fill_ratio
+            nodes, objimage = do_bod_metric(front_left, 254, 3, 0.1, 0.6, 0.5, self.sizetable)
+
             cv2.imwrite("%s/f%d_fl.jpg" % (self.logdir,self.fidx), front_left)
             cv2.imwrite("%s/f%d_obj.png" % (self.logdir,self.fidx), objimage)
 

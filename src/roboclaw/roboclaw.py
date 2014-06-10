@@ -719,14 +719,17 @@ class Roboclaw(object):
         17 - Read Quadrature Encoder Register M2
         """
         with self._device_lock:
-            self._send_command(17)
-            enc = self._read_slong()
-            status = self._read_byte()
-            crc = self._checksum & 0x7F
-            if crc == self._read_byte():
-                return (enc, status)
-            else:
-                raise ValueError("Checksum mismatch.")
+            try:
+                self._send_command(17)
+                enc = self._read_slong()
+                status = self._read_byte()
+                crc = self._checksum & 0x7F
+                if crc == self._read_byte():
+                    return (enc, status)
+                else:
+                    raise ValueError("Checksum mismatch.")
+            except Exception, e:
+                raise ValueError(e)
 
     @property
     def m1_counter_speed(self):
