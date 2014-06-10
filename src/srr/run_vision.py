@@ -89,13 +89,13 @@ class VisionRunner:
             self.pc.set_height(1.6)
             self.pc.set_patch_size(10.0)
             self.pc.shift_view = False
-            self.sizetable = self.pc.calculate_metric_sizes()
             self.altpc = PerspectiveCorrector(front_left.shape, 500)
             self.altpc.set_angle(60.0 * math.pi / 180.0)
             self.altpc.set_focal_length(self.cmatrix[0,0] / 960.0 * 1.0)
             self.altpc.set_height(1.6)
             self.altpc.set_patch_size(60.0)
             self.altpc.shift_view = False
+            self.sizetable = self.altpc.calculate_metric_sizes()
 
         if self.rearpc == None and self.run_rear:
             self.rearpc = PerspectiveCorrector(rear.shape, 500)
@@ -131,7 +131,7 @@ class VisionRunner:
             # nodes, objimage = do_bloom_marker_detection(front_left,
             #                                             254, 5, 0.4)
             # graythresh, min_pixel_size, min_metric_size, max_metric_size, fill_ratio
-            nodes, objimage = do_bod_metric(front_left, 254, 3, 0.1, 0.6, 0.5, self.sizetable)
+            nodes, objimage = do_bod_metric(front_left, 254, 3, 0.02, 0.20, 0.4, self.sizetable)
 
             cv2.imwrite("%s/f%d_fl.jpg" % (self.logdir,self.fidx), front_left)
             cv2.imwrite("%s/f%d_obj.png" % (self.logdir,self.fidx), objimage)

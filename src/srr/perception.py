@@ -18,7 +18,7 @@ class Perceptor(object):
                                                environment.start[1])
         self.rotation = environment.start[2]
 
-        self.homepos = None
+        self.home = None
         self.targets = []
 
         # Start main thread internally
@@ -55,22 +55,6 @@ class Perceptor(object):
         return []
     
     @property
-    def targets(self):
-        """
-        List of potential targets, specified as (x,y) tuples in the rover
-        local frame in meters.
-        """
-        return self.targets
-
-    @property
-    def home(self):
-        """
-        Shapely point indicating the home platform position relative
-        to the rover local frame in meters, or None if it is not detected.
-        """
-        return self.homepos
-
-    @property
     def beacon(self):
         """
         Shapely point indicating the beacon position relative to the rover
@@ -103,14 +87,14 @@ class Perceptor(object):
 
             # home beacon
             if vision_system.platpos is not None:
-                self.homepos = shapely.geometry.Point(vision_system.platpos[1],
+                self.home = shapely.geometry.Point(vision_system.platpos[1],
                                                       -vision_system.platpos[0])
 
             if vision_system.objpoints is not None:
                 pts = vision_system.objpoints
-                ntps = pts.shape[0]
+                npts = pts.shape[1]
                 self.targets = []
                 for i in range(npts):
-                    curpt = shapely.geometry.Point(pts[i][1],
-                                                    -pts[i][0])
+                    curpt = shapely.geometry.Point(pts[1][i],
+                                                    -pts[0][i])
                     self.targets.append(curpt)

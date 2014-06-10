@@ -96,10 +96,11 @@ class MissionPlanner(object):
                 logger.info("Mission aborted.")
                 return
 
-            self.navigator.goto_goal(10.0, 0.0)  # Position of precached sample
+#            self.navigator.goto_goal(0.0, 86.56)  # Position of precached sampl
+            self.navigator.goto_goal(0.0, 5.0)  # testing code
 
         # Try to find the sample by spiraling.
-        while True
+        while True:
             time.sleep(0.01)
             if not self.is_running:
                 logger.info("Mission aborted.")
@@ -127,7 +128,7 @@ class MissionPlanner(object):
 
         # Spend the rest of the time trying to go home.
         while not self.navigator.goto_goal(srr.navigation.ORIGIN) \
-          and self.perceptor.home is None
+          and self.perceptor.home is None:
             time.sleep(0.01)
             if not self.is_running:
                 logger.info("Mission aborted.")

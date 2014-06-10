@@ -42,7 +42,8 @@ def extractAllCircles(grayim, colorThresh):
         area = cv2.contourArea(pts)
         arclength = cv2.arcLength(pts, True)
         
-        ret.append((cmx, cmy, rad, area, arclength))
+        if rad > 1.0 and cmx > 0.0 and cmy > 0.0:        
+            ret.append((cmx, cmy, rad, area, arclength))
     return ret, retbinimg
 
 def extractNodeCircles(grayim, colorThresh, radThresh, fillThresh):
@@ -78,9 +79,9 @@ def do_bod_metric(srcimg, graythresh, minpsize, minsize, maxsize, fillthresh, si
         basepos = max(min(int(cmy),mpos-1),0)
         truesize = rad * sizetable[basepos]
         density = area / (rad*rad*math.pi)
-        print("xy: (%f,%f), Baserad: %f, truesize: %f" % (cmx, cmy, rad, truesize))
         if rad > minpsize and truesize > minsize and truesize < maxsize and density > fillthresh:
             print("Added node.")
+            print("xy: (%f,%f), Baserad: %f, truesize: %f" % (cmx, cmy, rad, truesize))
             nodes.append((cmx, cmy, rad))
         else:
             rejnodes.append((cmx, cmy, rad))
