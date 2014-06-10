@@ -8,6 +8,14 @@ import logging
 
 logger = logging.getLogger('vision')
 
+def create_mask(srcim):
+    grayim = cv2.cvtColor(srcim, cv2.cv.CV_RGB2GRAY)
+    retval, binimg = cv2.threshold(grayim, 128, 1, cv2.THRESH_BINARY)
+    return cv2.merge([binimg, binimg, binimg])
+
+def apply_mask(srcim, mask):
+    return srcim * mask
+
 def findBloomedObjects(srcim, thresh, minrad):
     grayim = cv2.cvtColor(srcim, cv2.cv.CV_RGB2GRAY)
     return extractNodes(grayim, thresh, minrad)

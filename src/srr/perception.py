@@ -3,6 +3,7 @@ import threading
 import shapely.geometry
 import logging
 import run_vision
+import math
 logger = logging.getLogger('perception')
 
 
@@ -16,6 +17,9 @@ class Perceptor(object):
         self.position = shapely.geometry.Point(environment.start[0],
                                                environment.start[1])
         self.rotation = environment.start[2]
+
+        self.homepos = None
+        self.targets = []
 
         # Start main thread internally
         self.is_running = True
@@ -56,7 +60,7 @@ class Perceptor(object):
         List of potential targets, specified as (x,y) tuples in the rover
         local frame in meters.
         """
-        return []
+        return self.targets
 
     @property
     def home(self):
@@ -64,7 +68,7 @@ class Perceptor(object):
         Shapely point indicating the home platform position relative
         to the rover local frame in meters, or None if it is not detected.
         """
-        return None
+        return self.homepos
 
     @property
     def beacon(self):
@@ -85,13 +89,28 @@ class Perceptor(object):
         while (self.is_running):
             vision_system.process_frame()
             # camera faces backwards
-            camx = -1.0 * vision_system.scaled_pos[0]
-            camy = -1.0 * vision_system.scaled_pos[1]
+            # camera coordinates have y forward
+            camx = -1.0 * vision_system.scaled_pos[1]
+            camy =  1.0 * vision_system.scaled_pos[0]
 
             # rover is forward of camera view pos
             fdist = 1.0 # m forward 
-            roverx = camx - math.sin(vision_system.theta)*fdist
-            rovery = camy + math.cos(vision_system.theta)*fdist
+            roverx = camx + math.cos(vision_system.theta)*fdist
+            rovery = camy - math.sin(vision_system.theta)*fdist
             
             self.position = shapely.geometry.Point(roverx, rovery)
             self.rotation = vision_system.theta
+
+            # home beacon
+            if vision_system.platpos is not None:
+                self.homepos = shapely.geometry.Point(vision_system.platpos[1],
+                                                      -vision_system.platpos[0])
+
+            if vision_system.objpoints is not None:
+                pts = vision_system.objpoints
+                ntps = pts.shape[0]
+                self.targets = []
+                for i in range(npts):
+                    curpt = shapely.geometry.Point(pts[i][1],
+                                                    -pts[i][0])
+                    self.targets.append(curpt)

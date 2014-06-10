@@ -10,6 +10,7 @@ class CameraProcess:
         self.datas = {}
         self.processes = []
         self.frameidx = 0
+        self.fdelay = 800
 
     def add_process(self, proc, inputs, ouputs):
         self.processes.append((proc, inputs, outputs))
@@ -75,5 +76,5 @@ class CameraProcess:
         cam = pygray.Camera(guid)
         cam.setframerate(framerate)
         cam.setcolormode(usecolor)
-        cam.setframedelay(400)
+        cam.setframedelay(self.fdelay)
         self.add_raw_camera(cam, camname)

@@ -5,26 +5,35 @@ import math
 from cameraprocess import CameraProcess
 from groundtrack.perspective import PerspectiveCorrector, Unwarper
 from groundtrack.run_tracking import DefaultTracker
-from objdetect.colorblobs import do_bloom_marker_detection
+from objdetect.colorblobs import do_bloom_marker_detection,create_mask,apply_mask
 import logging
 logger = logging.getLogger('vision')
 
 class VisionRunner:
     def __init__(self):
         self.pc = None
+        self.altpc = None
         self.rearpc = None
         self.fidx = 0
         self.objmod = 10
         self.cams = CameraProcess()
         self.frate = 10.0
         self.logdir = "/home/cephal/vlog"
-        self.odo_multiplier = 0.00167
+        self.maskimg_fl = cv2.imread("/home/cephal/mask_fl.png")
+        self.mask_fl = create_mask(self.maskimg_fl)
+        self.odo_multiplier = 0.00167 * (9.4/8.0)
+        self.sizetable = None
 
         self.theta = 0
         self.scaled_pos = [0.0,0.0]
 
+        self.platpos = None
+        self.platscale = 0.1
+
+        self.objpoints = None
+
         self.run_rear = True
-        self.run_frontL = False
+        self.run_frontL = True
         self.run_frontR = False
 
         if self.run_frontL:
@@ -64,7 +73,7 @@ class VisionRunner:
         uw_left = None
         if self.run_frontL:
             uw_left = self.unwarper.apply(self.cams.get_data("front_left"))
-            front_left = cv2.flip(cv2.flip(uw_left,1), 0)
+            front_left = apply_mask(cv2.flip(cv2.flip(uw_left,1), 0), self.mask_fl)
         front_right = None
         if self.run_frontR:
             front_right = self.cams.get_data("front_right")
@@ -80,6 +89,13 @@ class VisionRunner:
             self.pc.set_height(1.6)
             self.pc.set_patch_size(10.0)
             self.pc.shift_view = False
+            self.sizetable = self.pc.calculate_metric_sizes()
+            self.altpc = PerspectiveCorrector(front_left.shape, 500)
+            self.altpc.set_angle(60.0 * math.pi / 180.0)
+            self.altpc.set_focal_length(self.cmatrix[0,0] / 960.0 * 1.0)
+            self.altpc.set_height(1.6)
+            self.altpc.set_patch_size(60.0)
+            self.altpc.shift_view = False
 
         if self.rearpc == None and self.run_rear:
             self.rearpc = PerspectiveCorrector(rear.shape, 500)
@@ -118,16 +134,40 @@ class VisionRunner:
             cv2.imwrite("%s/f%d_obj.png" % (self.logdir,self.fidx), objimage)
 
             impwarp = self.pc.apply(front_left)
-            cv2.imwrite("%s/f%d_pc.jpg" % (self.logdir,self.fidx), impwarp) 
+            altwarp = self.altpc.apply(front_left)
+            #cv2.imwrite("%s/f%d_pc.jpg" % (self.logdir,self.fidx), impwarp)
+            cv2.imwrite("%s/f%d_pcalt.jpg" % (self.logdir,self.fidx), altwarp) 
             #warpim = self.pc.apply(
             pts = np.ones((3, len(nodes)), dtype=np.float32) 
             for i, p in enumerate(nodes):
                 pts[0,i] = p[0]
                 pts[1,i] = p[1]
             logger.debug("FOUND NODES: " + str(pts))
+            self.objpoints = None
             if len(nodes) > 0:
                 tpts = self.pc.image_coords_to_metric(pts)
                 logger.debug("TF NODES: " + str(tpts))
+                self.objpoints = tpts
+
+            #platnodes, platimage = do_bloom_platform_detection(front_left,
+            #                                                   254,
+            #                                                   self.sizetable)
+            platnodes, platimage = do_bloom_marker_detection(altwarp,
+                                                               254,
+                                                               10,
+                                                               0.2)
+            self.platpos = None
+            if len(platnodes) > 0:
+                tx = self.platscale * (platnodes[0][0] - 250.0)
+                ty = self.platscale * (250.0 - platnodes[0][1])
+                self.platpos = (tx, ty)
+                logger.debug("Platpos (m): (%f, %f)" % (tx, ty))
+            logger.debug("Platnodes: " + str(platnodes))
+            #ptpts = None
+            #if len(platnodes) > 0:
+            #    ptpts = self.pc.image_coords_to_metric(pts)
+            #    print("PLATFORM LOCATED?: " + str(ptpts))
+            cv2.imwrite("%s/f%d_plat.png" % (self.logdir,self.fidx), platimage)
 
 def main():
     vt = VisionRunner()
