@@ -8,7 +8,7 @@ using namespace FlyCapture2;
 
 typedef struct {
 	PyObject_HEAD
-	Camera* cam;
+	GigECamera* cam;
 	bool useColor;
 	CameraInfo* camInfo;
 } pygray_CameraObject;
@@ -111,7 +111,7 @@ PygrayCamera_init(pygray_CameraObject* self, PyObject* args, PyObject* kwds)
 	stringToGuid(tempstr, guid);
 	printGuid(guid);
 
-	self->cam = new Camera;
+	self->cam = new GigECamera;
 	self->camInfo = new CameraInfo;
 
 	// Connect to a camera
@@ -158,6 +158,7 @@ static PyObject* PygrayCamera_setcolormode(pygray_CameraObject* self,
 static PyObject* PygrayCamera_setvideomode(pygray_CameraObject* self,
 	PyObject* args) {
 
+	std::cout << "SETVIDEOMODE: THIS FUNCTION DOESN'T WORK ANY MORE!\n";
 	if(self->cam) {
 		int videoMode = 0;
 		int framerateMode = 0;
@@ -169,14 +170,54 @@ static PyObject* PygrayCamera_setvideomode(pygray_CameraObject* self,
 
 		VideoMode prevVideoMode;
 		FrameRate prevFramerate;
-		self->cam->GetVideoModeAndFrameRate(&prevVideoMode, &prevFramerate);
+		//self->cam->GetVideoModeAndFrameRate(&prevVideoMode, &prevFramerate);
 		std::cout << "PVM: " << prevVideoMode << ", PFR: " << prevFramerate << std::endl;
 
-		error = self->cam->SetVideoModeAndFrameRate((VideoMode)videoMode, (FrameRate)framerateMode);
+		//error = self->cam->SetVideoModeAndFrameRate((VideoMode)videoMode, (FrameRate)framerateMode);
 		if(error != PGRERROR_OK) {
 			doCameraError(error);
 			return NULL;
 		}
+	}
+
+	Py_RETURN_NONE;
+}
+
+static PyObject* PygrayCamera_setframedelay(pygray_CameraObject* self,
+	PyObject* args) {
+	if(self->cam) {
+		int packetDelay;
+		if (! PyArg_ParseTuple(args, "i", &packetDelay) )
+		{
+			Py_RETURN_NONE;
+		}
+		Error error;
+
+		std::cout << "Going to set frame/packet delay to " << packetDelay << std::endl;
+
+		//GigECamera* pCamera = dynamic_cast<GigECamera*>(self->cam);
+		//GigECamera* pCamera = (GigECamera*)self->cam;
+
+		// if(pCamera == NULL) {
+		// 	std::cout << "CAST PROBLEM???\n";
+		// 	Py_RETURN_NONE;
+		// } else {
+		// 	std::cout << "Cast is not null.\n";
+		// }
+
+		GigEProperty packetDelayProp;
+		packetDelayProp.propType = PACKET_DELAY;
+		packetDelayProp.value = packetDelay;
+		std::cout << "Going to do it now..." << packetDelay << std::endl;
+		error = self->cam->SetGigEProperty(&packetDelayProp);
+		if ( error != PGRERROR_OK )
+		{
+			doCameraError(error);
+			return NULL;
+		}
+
+		std::cout << "Successfully set frame delay?" << std::endl;
+
 	}
 
 	Py_RETURN_NONE;
@@ -318,6 +359,8 @@ static PyMethodDef PygrayCamera_methods[] = {
 	 "Set the camera resolution and framerate."},
 	 {"setframerate", (PyCFunction)PygrayCamera_setframerate, METH_VARARGS,
 	 "Set the camera framerate."},
+	{"setframedelay", (PyCFunction)PygrayCamera_setframedelay, METH_VARARGS,
+	 "Set the gige packet delay."},
 	{NULL}  /* Sentinel */
 };
 
