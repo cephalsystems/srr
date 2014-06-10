@@ -48,16 +48,15 @@ class Perceptor(object):
         List of obstacles, specified as shapely.Point(x.y) tuples in the
         rover local frame in meters.
         """
-        return [shapely.geometry.Point(7, 5),
-                shapely.geometry.Point(-10, 10)]
-
+        return []
+    
     @property
     def targets(self):
         """
         List of potential targets, specified as (x,y) tuples in the rover
         local frame in meters.
         """
-        return [shapely.geometry.Point(5, 5)]
+        return []
 
     @property
     def home(self):
@@ -65,7 +64,7 @@ class Perceptor(object):
         Shapely point indicating the home platform position relative
         to the rover local frame in meters, or None if it is not detected.
         """
-        return shapely.geometry.Point(3, 3)
+        return None
 
     @property
     def beacon(self):
@@ -73,7 +72,7 @@ class Perceptor(object):
         Shapely point indicating the beacon position relative to the rover
         local frame in meters, or None if it is not detected.
         """
-        return shapely.geometry.Point(10, -10)
+        return None
 
     def main(self):
         """
@@ -86,7 +85,13 @@ class Perceptor(object):
         while (self.is_running):
             vision_system.process_frame()
             # camera faces backwards
-            worldx = -1.0 * vision_system.scaled_pos[0]
-            worldy = -1.0 * vision_system.scaled_pos[1]
-            self.position = shapely.geometry.Point(worldx, worldy)
+            camx = -1.0 * vision_system.scaled_pos[0]
+            camy = -1.0 * vision_system.scaled_pos[1]
+
+            # rover is forward of camera view pos
+            fdist = 1.0 # m forward 
+            roverx = camx - math.sin(vision_system.theta)*fdist
+            rovery = camy + math.cos(vision_system.theta)*fdist
+            
+            self.position = shapely.geometry.Point(roverx, rovery)
             self.rotation = vision_system.theta
