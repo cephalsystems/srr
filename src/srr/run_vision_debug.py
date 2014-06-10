@@ -30,7 +30,7 @@ class VisionRunner:
 
         self.run_rear = True
         self.run_frontL = True
-        self.run_frontR = False
+        self.run_frontR = True
 
         if self.run_frontL:
             self.cams.add_camera("beb81a4eda09d70e9c8038688a06fce0",
