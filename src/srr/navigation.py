@@ -19,7 +19,7 @@ K_DRIVE = 50000
 SPEED_MIN = 20000
 SPEED_MAX = 100000
 ACCEL_MAX = 40000
-WHEELBASE_WIDTH = 0.5
+WHEELBASE_WIDTH = 0.350
 TICKS_PER_METER = 66000.0
 
 ORIGIN = shapely.geometry.Point(0, 0)
@@ -33,7 +33,7 @@ def signum(value):
     if (value > 0.0):
         return (1.0, value)
     elif (value < 0.0):
-        return (-1.0, value)
+        return (-1.0, -value)
     else:
         return (0.0, 0.0)
 
@@ -239,9 +239,9 @@ class Navigator(object):
         tick_distance = angle_magnitude * WHEELBASE_WIDTH * TICKS_PER_METER
 
         self.motors.mixed_set_speed_accel_distance(
-            ACCEL_MAX,
-            sign*SPEED_MAX, tick_distance,
-            sign*SPEED_MAX, tick_distance
+            20000,
+            -sign*20000, tick_distance,
+            sign*20000, tick_distance
             )
         # TODO: do I need to wait here?
 
@@ -265,11 +265,11 @@ class Navigator(object):
 
         # Loop to monitor distance traveled so far.
         timeout = time.time() + (tick_distance / 40000.0)
-        start_distance = self.motors.m1_encoder
+        start_distance = self.motors.m1_encoder[0]
         while time.time() < timeout:
             try:
                 time.sleep(0.1)
-                if self.motors.m1_encoder - start_distance >= tick_distance:
+                if self.motors.m1_encoder[0] - start_distance >= tick_distance:
                     logger.info("Completed traverse of {0}m.".format(distance))
                     break
             except ValueError:
@@ -283,6 +283,7 @@ class Navigator(object):
                 logger.info("Resuming drive.")
 
         # Stop motion after timeout or completion.
+        logger.info("Stopping angle turn.")
         self.motors.mixed_set_speed_accel(ACCEL_MAX, 0, 0)
 
     def main(self):
@@ -296,8 +297,8 @@ class Navigator(object):
         while (self.is_running):
             try:
                 time.sleep(0.01)
-                curr_encoder_m1 = self.m1_encoder
-                curr_encoder_m2 = self.m2_encoder
+                curr_encoder_m1 = self.motors.m1_encoder[0]
+                curr_encoder_m2 = self.motors.m2_encoder[0]
 
                 if last_encoders is not None:
                     # Get distances traveled by each wheel.
