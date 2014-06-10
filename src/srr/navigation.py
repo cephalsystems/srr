@@ -23,6 +23,19 @@ WHEELBASE_WIDTH = 0.5
 TICKS_PER_METER = 66000.0
 
 ORIGIN = shapely.geometry.Point(0, 0)
+DISTANCE_THRESHOLD = 0.5
+
+
+def signum(value):
+    """
+    Separates value into sign and magnitude.
+    """
+    if (value > 0.0):
+        return (1.0, value)
+    elif (value < 0.0):
+        return (-1.0, value)
+    else:
+        return (0.0, 0.0)
 
 
 def clamp(value, minimum, maximum):
@@ -87,13 +100,21 @@ class Navigator(object):
         Current (x,y,theta) pose of the rover, as best estimated by the
         odometry system in the global frame.
         """
-        return self.position.x, self.position.y, self._rotation
+        return self.position.x, self.position.y, self.rotation
 
     def stop(self):
         """
         Immediately stop the vehicle.
         """
         self.motors.mixed_forward(0.0)
+
+    def spiral(self, start_time):
+        """
+        Drives the vehicle in a progressively widening spiral.
+        """
+        logger.info("SPIRAL: {0}".format(time.time() - start_time))
+        t = time.time() - start_time
+        self.goto_angle((math.pi/2)/math.exp(t/180.0))
 
     def goto_angle(self, theta):
         """
@@ -111,6 +132,75 @@ class Navigator(object):
         """
         logger.info("GOTO_TGT: {0}".format(point))
         self._goto_target(point)
+
+    def goto_goal(self, goal):
+        """
+        Navigate toward a point in the global frame.  This considers
+        the global direction and the distance to the target.
+        """
+        logger.info("GOTO_GOAL: {0}".format(goal))
+        task_distance = self.position.distance(goal)
+        if task_distance < DISTANCE_THRESHOLD:
+            # I could stop here, but that might stall the rover,
+            # so I'm just going to let it run.
+            return True
+
+        # If we are not near the waypoint or inside the bounds,
+        # try to get there.
+        vector = goal - self.position
+        target_angle = math.atan2(vector.y, vector.x)
+        self.goto_angle(target_angle - self.rotation)
+        return False
+
+    def goto_home(self):
+        """
+        Go towards best guess of home position.
+        """
+        home = self.perceptor.home
+        beacon = self.perceptor.beacon
+
+        if home is not None:
+            if ORIGIN.distance(home) < 1:
+                return True
+            else:
+                self._goto_target(home)
+        elif beacon is not None:
+            self._goto_target(beacon)
+            return False
+        else:
+            start = ORIGIN
+            self.goto_goal(start)
+            return False
+
+    def _goto_target(self, point, obstacle_home=True):
+        """
+        Internal function to drive directly to a target location.
+        """
+        obstacles = self.perceptor.obstacles
+
+        beacon = self.perceptor.beacon
+        if beacon is not None:
+            obstacles.append(beacon)
+
+        home = self.perceptor.home
+        if home is not None and obstacle_home:
+            obstacles.append(home)
+
+        self.goal = self._compute_safe_target(point, obstacles)
+        distance, theta = to_polar(self.goal)
+
+        # Create speeds based on proportional heuristic.
+        forward_speed = K_DRIVE * math.cos(theta) * distance
+        turn_speed = K_TURN * (1.0 / (1.0 + math.exp(-2.0*theta)))  # Logistic
+
+        # Combine turning and forward terms to get motor speed.
+        v1 = forward_speed - turn_speed
+        v2 = forward_speed + turn_speed
+
+        # Limit velocities to reasonable range.
+        v1 = clamp(v1, -SPEED_MAX, SPEED_MAX)
+        v2 = clamp(v1, -SPEED_MAX, SPEED_MAX)
+        self.motors.mixed_set_speed_accel(ACCEL_MAX, v1, v2)
 
     def _compute_safe_target(self, target, obstacles):
         """
@@ -141,74 +231,101 @@ class Navigator(object):
         goal_distance = min(goal_distance, MAX_DISTANCE)
         return from_polar(goal_distance, goal_angle)
 
-    def goto_home(self):
+    def angle(self, angle):
         """
-        Go towards best guess of home position.
+        Rotates in place towards specified angle.
         """
-        home = self.perceptor.home
-        beacon = self.perceptor.beacon
+        (sign, angle_magnitude) = signum(angle)
+        tick_distance = angle_magnitude * WHEELBASE_WIDTH * TICKS_PER_METER
 
-        if home is not None:
-            if ORIGIN.distance(home) < 1:
-                return True
-            else:
-                self._goto_target(home)
-        elif beacon is not None:
-            self._goto_target(beacon)
-            return False
-        else:
-            # TODO: figure out where starting locatiom was.
-            start = ORIGIN
-            self._goto_target(start)
-            return False
-
-    def _goto_target(self, point):
-        """
-        Internal function to drive directly to a target location.
-        """
-        obstacles = self.perceptor.obstacles
-
-        beacon = self.perceptor.beacon
-        if beacon is not None:
-            obstacles.append(beacon)
-
-        self.goal = self._compute_safe_target(point, obstacles)
-        distance, theta = to_polar(self.goal)
-
-        # Create speeds based on proportional heuristic.
-        forward_speed = K_DRIVE * math.cos(theta) * distance
-        turn_speed = K_TURN * (1.0 / (1.0 + math.exp(-2.0*theta)))  # Logistic
-
-        # Combine turning and forward terms to get motor speed.
-        v1 = forward_speed - turn_speed
-        v2 = forward_speed + turn_speed
-
-        # Limit velocities to reasonable range.
-        v1 = clamp(v1, -SPEED_MAX, SPEED_MAX)
-        v2 = clamp(v1, -SPEED_MAX, SPEED_MAX)
-        self.motors.mixed_set_speed_accel(ACCEL_MAX, v1, v2)
+        self.motors.mixed_set_speed_accel_distance(
+            ACCEL_MAX,
+            sign*SPEED_MAX, tick_distance,
+            sign*SPEED_MAX, tick_distance
+            )
+        # TODO: do I need to wait here?
 
     def drive(self, distance):
         """
         Drives directly forward by the specified distance.
         Waits until complete.
         """
+        # Compute direction and distance to travel in encoder ticks.
         sign = 1.0
         if distance < 0:
             sign = -1.0
             distance *= -1.0
         tick_distance = distance * TICKS_PER_METER
 
+        # Start movement.
         self.motors.mixed_set_speed_accel_distance(
-            ACCEL_MAX, sign*SPEED_MAX, tick_distance, sign*SPEED_MAX, tick_distance)
-        time.sleep(2.0 * distance)
-        
+            ACCEL_MAX,
+            sign*SPEED_MAX, tick_distance,
+            sign*SPEED_MAX, tick_distance)
+
+        # Loop to monitor distance traveled so far.
+        timeout = time.time() + (tick_distance / 40000.0)
+        start_distance = self.motors.m1_encoder
+        while time.time() < timeout:
+            try:
+                time.sleep(0.1)
+                if self.motors.m1_encoder - start_distance >= tick_distance:
+                    logger.info("Completed traverse of {0}m.".format(distance))
+                    break
+            except ValueError:
+                logger.info("Wireless pause.  Waiting for resume.")
+                tick_distance -= start_distance
+                start_distance = 0
+
+                while not self.motors.is_connected:
+                    time.sleep(0.5)
+                timeout = time.time() + (tick_distance / 40000.0)
+                logger.info("Resuming drive.")
+
+        # Stop motion after timeout or completion.
+        self.motors.mixed_set_speed_accel(ACCEL_MAX, 0, 0)
+
     def main(self):
         """
         Main execution function.  This is called from within a thread in
         the constructor.  The is_running flag is used to indicate when it
         should stop executing.
         """
+        last_encoders = None
+
         while (self.is_running):
-            time.sleep(1)
-            pass
+            try:
+                time.sleep(0.01)
+                curr_encoder_m1 = self.m1_encoder
+                curr_encoder_m2 = self.m2_encoder
+
+                if last_encoders is not None:
+                    # Get distances traveled by each wheel.
+                    distance_m1 = (curr_encoder_m1 - last_encoders[0]) \
+                        * TICKS_PER_METER
+                    distance_m2 = (curr_encoder_m2 - last_encoders[1]) \
+                        * TICKS_PER_METER
+
+                    # Avoid numerical singularity w/ divide-by-zero.
+                    if distance_m2 == distance_m1:
+                        distance_m2 += 1e-6
+
+                    # Compute radius of curvature and angle.
+                    dTheta = (distance_m2 - distance_m1) / WHEELBASE_WIDTH
+                    dR = WHEELBASE_WIDTH * (distance_m2 + distance_m1) \
+                        / 2.0 * (distance_m2 - distance_m1)
+                    rotation_center = shapely.geometry.Point(
+                        -math.sin(self.rotation) * dR,
+                        math.cos(self.rotation) * dR
+                        )
+
+                    # Integrate with existing pose estimate.
+                    self.rotation += dTheta
+                    self.position = shapely.affinity.rotate(
+                        self.position, dTheta,
+                        origin=rotation_center, use_radians=True)
+
+                last_encoders = (curr_encoder_m1, curr_encoder_m2)
+
+            except ValueError:
+                last_encoders = (0, 0)

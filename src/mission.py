@@ -12,6 +12,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run the SRR rover.')
     parser.add_argument('-m', '--mission', type=str, default='mission.yaml',
                         help='mission specification YAML file')
+    parser.add_argument('-p', '--precached', action='store_true',
+                        help='specify either level 1 or level 2')
     parser.add_argument('-s', '--sim', action='store_true',
                         help='simulate movement and perception')
     parser.add_argument('-v', '--vision', type=str,

@@ -71,19 +71,130 @@ class MissionPlanner(object):
         if args.console:
             import IPython
             IPython.embed()
+        elif args.precached:
+            self.mission1()
         else:
-            self.perform_mission()
+            self.mission2()
 
         self.perceptor.shutdown()
         self.navigator.shutdown()
         self.collector.shutdown()
         logger.info("Shutdown complete.")
 
+    def mission1(self):
+        """
+        Attempts to retrieve the precached sample!
+        """
+        logger.info("Precached sample mission started.")
+        self.collector.home_scoop()
+
+        # Drive straight to the sample.
+        timeout = time.time() + 300.0  # 5 minute timeout.
+        while time.time() < timeout:
+            time.sleep(0.01)
+            if not self.is_running:
+                logger.info("Mission aborted.")
+                return
+
+            self.navigator.goto_goal(10.0, 0.0)  # Position of precached sample
+
+        # Try to find the sample by spiraling.
+        start_time = time.time()
+        timeout = start_time + 1200.0  # 20 minute timeout.
+        while time.time() < timeout \
+                and self.navigator.motors.main_voltage > 11.8:
+            time.sleep(0.01)
+            if not self.is_running:
+                logger.info("Mission aborted.")
+                return
+
+            targets = self.perceptor.targets
+            if len(targets) > 0:
+                # If we see a target try to get it!
+                logger.info("Diverting to target of opportunity!")
+                distances = [srr.navigation.to_polar(target)[0]
+                             for target in targets]
+                min_distance = min(distances)
+                min_target = targets[distances.index(min_distance)]
+
+                if min_distance > MissionPlanner.DISTANCE_THRESHOLD:
+                    self.navigator.goto_target(min_target)
+                else:
+                    self.collector.collect()
+            else:
+                # If we don't see anything, just spiral around.
+                self.navigator.spiral(time.time() - start_time)
+
+        # Spend the rest of the time trying to go home.
+        start_time = time.time()
+        while not self.navigator.goto_home(start_time):
+            time.sleep(0.01)
+            if not self.is_running:
+                logger.info("Mission aborted.")
+                return
+
+        # Shut down everything and complete mission.
+        self.collector.home()
+        self.navigator.stop()
+        logger.info("Mission completed.")
+
+    def mission2(self):
+        """
+        Attempts to retrieve as many samples as possible!
+        """
+        logger.info("Search sample mission started.")
+        self.collector.home_scoop()
+
+        # Drive off the platform
+        self.navigator.drive(3.0)
+
+        # Try to find the sample by spiraling.
+        start_time = time.time()
+        timeout = start_time + 3600.0  # 1 hour timeout
+        while time.time() < timeout \
+                and self.navigator.motors.main_voltage > 11.8:
+            time.sleep(0.01)
+            if not self.is_running:
+                logger.info("Mission aborted.")
+                return
+
+            targets = self.perceptor.targets
+            if len(targets) > 0:
+                # If we see a target try to get it!
+                logger.info("Diverting to target of opportunity!")
+                distances = [srr.navigation.to_polar(target)[0]
+                             for target in targets]
+                min_distance = min(distances)
+                min_target = targets[distances.index(min_distance)]
+
+                if min_distance > MissionPlanner.DISTANCE_THRESHOLD:
+                    self.navigator.goto_target(min_target)
+                else:
+                    self.collector.collect()
+            else:
+                # If we don't see anything, just spiral around.
+                self.navigator.spiral(time.time() - start_time)
+
+        # Spend the rest of the time trying to go home.
+        start_time = time.time()
+        while not self.navigator.goto_home(start_time):
+            time.sleep(0.01)
+            if not self.is_running:
+                logger.info("Mission aborted.")
+                return
+
+        # Shut down everything and complete mission.
+        self.collector.home()
+        self.navigator.stop()
+        logger.info("Mission completed.")
+
     def perform_mission(self):
         """
-        Attempts to complete an entire mission.
+        Attempts to perform a mission from the YAML specification.
         """
-        logger.info("Mission started.")
+        logging.info("Starting mission.")
+        self.collector.home_scoop()
+
         for task in self.mission:
             self.task = task
             logging.info("Executing task '{0}'.".format(task.name))
@@ -113,6 +224,7 @@ class MissionPlanner(object):
             time.sleep(1)
 
         # Shut down everything and complete mission.
+        self.collector.home()
         self.navigator.stop()
         logger.info("Mission completed.")
 
@@ -125,7 +237,6 @@ class MissionPlanner(object):
         # Get current location estimate
         # TODO: use perception estimate if available
         rover_location = self.navigator.position
-        rover_angle = self.navigator.rotation
 
         # If we see a target of opportunity, get it if we can!
         if not task.is_forced:
@@ -133,17 +244,19 @@ class MissionPlanner(object):
 
             if len(targets) > 0:
                 logger.info("Diverting to target of opportunity!")
-                distances = [rover_location.distance(target)
-                             for target in targets]
+                polar_targets = [srr.navigation.to_polar(target)
+                                 for target in targets]
+                distances = [distance for (distance, angle) in polar_targets]
                 min_distance = min(distances)
-                min_target = targets[distances.index(min_distance)]
+                min_target = polar_targets[distances.index(min_distance)]
 
-                if min_distance > MissionPlanner.DISTANCE_THRESHOLD:
-                    self.navigator.goto_target(min_target)
+                if min_distance > 2.0:
+                    self.navigator.goto_angle(min_target)
                     return False
+                if abs(min_target[1]) > 0.1:
+                    self.navigator.angle(min_target[1])
                 else:
-                    self.collector.scoop()
-                    self.collector.bag()
+                    self.collector.collect()
                     return False
 
         # Attempt to navigate based on distance to task.
@@ -151,11 +264,7 @@ class MissionPlanner(object):
         if task_distance > MissionPlanner.DISTANCE_THRESHOLD:
             # If we are not near the waypoint or inside the bounds,
             # try to get there.
-            logger.info("Driving to '{0}'.".format(task.name))
-            vector = task.location - rover_location
-            target_angle = math.atan2(vector.y, vector.x)
-            self.navigator.goto_angle(target_angle - rover_angle)
-            return False
+            return self.navigator.goto_goal(task.location)
         elif task.bounds.type != shapely.geometry.Point:
             # If we are inside a bounded area, just drive around.
             logger.info("Searching '{0}'.".format(task.name))

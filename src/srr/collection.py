@@ -3,6 +3,7 @@ import time
 import math
 import logging
 import roboclaw
+import srr.navigation
 logger = logging.getLogger('collection')
 
 SCOOPING_TIMEOUT = 20.0
@@ -11,13 +12,14 @@ SCOOPING_DRIVE_ACCEL = 15000
 
 LIFTER_RAISED_POSITION = 5000  # Position of the lifter when upright.
 LIFTER_HOLD_POSITION = 4100  # Position of the lifter when clear of bagger.
-LIFTER_STANDBY_POSITION = 1000 # Position of the lifter when in standby.
+LIFTER_STANDBY_POSITION = 1000  # Position of the lifter when in standby.
 
 BAGGER_REVOLUTION = 69000  # Ticks per bagging revolution.
 BAGGER_SPEED = 90
 BAGGER_TIMEOUT = 10.0
 
 BAGGER_PRELOAD = 12500
+
 
 class Collector(object):
     """
@@ -41,7 +43,7 @@ class Collector(object):
 
         # Maintain a local offset for encoders
         self.bagger_offset = 0
-        
+
         logger.info("Collector initialized.")
 
     def shutdown(self):
@@ -97,7 +99,7 @@ class Collector(object):
 
         # Move to position in next bagger revolution.
         next_encoder = position + BAGGER_REVOLUTION * \
-          (math.floor(curr_encoder / BAGGER_REVOLUTION))
+            (math.floor(curr_encoder / BAGGER_REVOLUTION))
 
         timeout = time.time() + BAGGER_TIMEOUT
         self.bagger.m2_forward(BAGGER_SPEED)
@@ -119,14 +121,14 @@ class Collector(object):
             except ValueError, e:
                 logger.info("Rehome interrupted by '{0}'".format(e))
                 self.bagger_offset = curr_encoder
-                
+
                 while not self.bagger.is_connected:
                     time.sleep(1)
                 timeout = time.time() + BAGGER_TIMEOUT
                 self.bagger.m2_forward(BAGGER_SPEED)
-                
+
         self.bagger.m2_forward(0)
-        
+
     def home_scoop(self):
         while True:
             # Wait for bagger to come back online.
@@ -140,7 +142,7 @@ class Collector(object):
                 timeout = time.time() + SCOOPING_TIMEOUT
                 prev_encoder, status = self.bagger.m1_encoder
                 self.bagger.m1_backward(64)
-        
+
                 while time.time() < timeout:
                     time.sleep(0.25)
                     curr_encoder, status = self.bagger.m1_encoder
@@ -148,7 +150,7 @@ class Collector(object):
                         logger.info("Valid home found.")
                         break
                     prev_encoder = curr_encoder
-                    
+
                 self.bagger.reset_encoders()
                 self.bagger.m1_backward(0)
                 logger.info("Scoop home set.")
@@ -156,7 +158,7 @@ class Collector(object):
             except ValueError, e:
                 logger.info("Rehome interrupted by '{0}'".format(e))
                 time.sleep(1)
-        
+
     def lower_scoop(self):
         logger.info("Lowering scoop.")
         timeout = time.time() + SCOOPING_TIMEOUT
@@ -176,7 +178,7 @@ class Collector(object):
                 self.home_scoop()
                 break
 
-        self.bagger.m1_backward(0)                                    
+        self.bagger.m1_backward(0)
 
     def drive_scoop(self, position):
         logger.info("Driving scoop.")
@@ -204,7 +206,7 @@ class Collector(object):
                 timeout = time.time() + SCOOPING_TIMEOUT
 
         self.bagger.m1_forward(0)
-        
+
     def start_scoop(self):
         logger.info("Starting scoop.")
         self.scoop.m1_forward(74)
@@ -214,18 +216,25 @@ class Collector(object):
         self.scoop.m1_backward(32)
         time.sleep(0.25)
         self.scoop.m1_backward(0)
-        
+
     def home(self):
         """
         Attempts to drive onto the home platform if we are really close.
         """
         logger.info("HOMING")
-        time.sleep(10)
-        # TODO: fill this in!!
-        # While < 15 deg angle, drive forward (before ramp)
+        polar_home = (10.0, math.pi)
 
-        # If we never hit a ramp, drive backwards and exit.
+        # Aim at the home platform.
+        while abs(polar_home[1]) > 0.1:
+            time.sleep(0.1)
 
-        # After ramp, drive until we are flat again
+            home = self.perceptor.home
+            if home is not None:
+                polar_home = srr.navigation.to_polar(home)
 
-        # If we never flattened, drive backwards and exit.
+            self.navigator.angle(polar_home[1])
+
+        # Drive onto the platform.
+        self.navigator.drive(polar_home[0])
+        logger.info("I think we are on the platform.")
+        return True
