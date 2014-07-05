@@ -23,9 +23,7 @@ Contents
 
 Copyright Notice
 ----------------
-Copyright (C) 2013. All rights reserved.
+Copyright (C) 2013-2014. All rights reserved.
   * Prasanna Velagapudi \<psigen@gmail.com>
   * Pyry Matikainen \<pkmatikainen@gmail.com>
   * Michael Dawson-Haggerty \<mik3dh@gmail.com>
-
-This repository is *not* open source.
